@@ -1,0 +1,9 @@
+- PLAN: db-schema initial migration
+- Created initial Supabase SQL migration: supabase/migrations/20260128000001_initial_schema.sql
+  - Extensions: uuid-ossp, pgcrypto
+  - Tables: profiles, bots, subscriptions
+  - RLS policies for all tables
+  - Triggers for updated_at
+  - Encryption fields prepared using pgcrypto
+- The migration file is prepared but not applied in a real Supabase project.
+- Warnings: Ensure auth.uid() casts to UUID in policies to avoid type mismatch.
