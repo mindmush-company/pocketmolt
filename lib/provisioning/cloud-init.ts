@@ -35,24 +35,6 @@ export function generateCloudInitWithCerts(options: CloudInitOptions): string {
   const configApiUrl = `https://${BACKEND_IP}:${CONFIG_API_PORT}`
   
   const natRoutingFiles = natGatewayIp ? `
-  - path: /etc/systemd/network/90-private.network
-    permissions: '0644'
-    content: |
-      [Match]
-      Name=enp* ens10
-      
-      [Network]
-      DHCP=yes
-      
-      [Route]
-      Gateway=${natGatewayIp}
-      Destination=0.0.0.0/0
-      Metric=100
-      
-      [DHCP]
-      UseRoutes=false
-      UseDNS=false
-
   - path: /etc/systemd/resolved.conf.d/pocketmolt.conf
     permissions: '0644'
     content: |
@@ -63,24 +45,17 @@ export function generateCloudInitWithCerts(options: CloudInitOptions): string {
 ` : ''
 
   const natRoutingCommands = natGatewayIp ? `
-  - |
-    echo "Waiting for private network interface..."
-    IFACE=""
-    for i in $(seq 1 60); do
-      for dev in enp7s0 enp8s0 ens10; do
-        if ip link show $dev 2>/dev/null | grep -q UP; then
-          IFACE=$dev
-          echo "Private network $IFACE up after \${i}s"
-          break 2
-        fi
-      done
-      sleep 1
-    done
-  - systemctl restart systemd-networkd
   - systemctl restart systemd-resolved
   - |
-    IFACE=$(ip -o link show | grep -E 'enp|ens10' | grep -v lo | head -1 | awk -F: '{print $2}' | tr -d ' ')
-    ip route replace default via ${natGatewayIp} dev $IFACE || echo "Route already set"
+    # Find the private network interface (has 10.x.x.x IP)
+    IFACE=$(ip -o addr show | grep 'inet 10\\.' | awk '{print $2}' | head -1)
+    if [ -n "$IFACE" ]; then
+      echo "Found private interface: $IFACE"
+      # Add default route via NAT gateway
+      ip route add default via ${natGatewayIp} dev $IFACE metric 100 || echo "Default route exists"
+    else
+      echo "No private interface found yet"
+    fi
 ` : ''
 
   return `#cloud-config
