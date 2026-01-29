@@ -131,7 +131,7 @@ ${indentCert(caCert)}
       WorkingDirectory=/opt/pocketmolt
       EnvironmentFile=/opt/pocketmolt/env
       ExecStartPre=/opt/pocketmolt/bin/fetch-config.sh
-      ExecStart=/usr/bin/clawdbot gateway
+      ExecStart=/usr/bin/clawdbot gateway --allow-unconfigured --bind loopback
       Restart=always
       RestartSec=10
       
@@ -155,7 +155,8 @@ ${indentCert(caCert)}
       echo "MoltBot Status: \\$(systemctl is-active pocketmolt-bot)"
       echo "Uptime: \\$(uptime -p)"
       
-      if curl -s --connect-timeout 2 "http://${privateIp}:18789/health" > /dev/null 2>&1; then
+      HEALTH=$(ANTHROPIC_API_KEY=test clawdbot gateway health 2>&1 || echo "FAIL")
+      if echo "$HEALTH" | grep -q "OK"; then
         echo "Gateway: healthy"
       else
         echo "Gateway: unreachable"

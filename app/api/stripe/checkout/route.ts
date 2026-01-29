@@ -2,9 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { stripe } from '@/lib/stripe'
+import { encrypt } from '@/lib/crypto/encryption'
 
 interface CheckoutRequestBody {
   botName: string
+}
+
+function getDefaultApiKeyEncrypted(): string {
+  const defaultKey = process.env.DEFAULT_ANTHROPIC_API_KEY
+  if (!defaultKey) {
+    return ''
+  }
+  const apiKeys = {
+    anthropic: defaultKey,
+    openai: null,
+  }
+  return encrypt(JSON.stringify(apiKeys))
 }
 
 function triggerProvisioning(botId: string): void {
@@ -78,7 +91,7 @@ export async function POST(request: NextRequest) {
           name: botName,
           status: 'starting' as const,
           hetzner_server_id: null,
-          encrypted_api_key: '',
+          encrypted_api_key: getDefaultApiKeyEncrypted(),
           telegram_bot_token_encrypted: '',
         })
         .select('id')

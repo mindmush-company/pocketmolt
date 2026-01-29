@@ -3,6 +3,19 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { deprovisionServer } from '@/lib/provisioning/server'
+import { encrypt } from '@/lib/crypto/encryption'
+
+function getDefaultApiKeyEncrypted(): string {
+  const defaultKey = process.env.DEFAULT_ANTHROPIC_API_KEY
+  if (!defaultKey) {
+    return ''
+  }
+  const apiKeys = {
+    anthropic: defaultKey,
+    openai: null,
+  }
+  return encrypt(JSON.stringify(apiKeys))
+}
 
 function triggerProvisioning(botId: string): void {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -125,7 +138,7 @@ async function handleCheckoutSessionCompleted(
       name: botName,
       status: 'starting' as const,
       hetzner_server_id: null,
-      encrypted_api_key: '',
+      encrypted_api_key: getDefaultApiKeyEncrypted(),
       telegram_bot_token_encrypted: '',
     })
     .select('id')
