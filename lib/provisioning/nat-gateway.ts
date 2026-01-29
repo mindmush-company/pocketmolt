@@ -201,7 +201,6 @@ export async function getActiveNatGateway(): Promise<NatGateway | null> {
     .from('nat_gateways')
     .select('*')
     .eq('status', 'active')
-    .lt('bot_count', supabase.raw('max_bots'))
     .order('bot_count', { ascending: true })
     .limit(1)
     .maybeSingle()
@@ -211,7 +210,15 @@ export async function getActiveNatGateway(): Promise<NatGateway | null> {
     return null
   }
   
-  return data ? mapGatewayRecord(data) : null
+  if (!data) {
+    return null
+  }
+  
+  if (data.bot_count >= data.max_bots) {
+    return null
+  }
+  
+  return mapGatewayRecord(data)
 }
 
 export async function ensureNatGateway(): Promise<NatGateway> {
@@ -237,14 +244,16 @@ export async function incrementBotCount(gatewayId: string): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createAdminClient() as any
   
-  const { error } = await supabase.rpc('increment_nat_gateway_bot_count', {
-    gateway_id: gatewayId,
-  })
+  const { data: current } = await supabase
+    .from('nat_gateways')
+    .select('bot_count')
+    .eq('id', gatewayId)
+    .single()
   
-  if (error) {
+  if (current) {
     await supabase
       .from('nat_gateways')
-      .update({ bot_count: supabase.raw('bot_count + 1') })
+      .update({ bot_count: current.bot_count + 1 })
       .eq('id', gatewayId)
   }
 }
@@ -253,14 +262,16 @@ export async function decrementBotCount(gatewayId: string): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createAdminClient() as any
   
-  const { error } = await supabase.rpc('decrement_nat_gateway_bot_count', {
-    gateway_id: gatewayId,
-  })
+  const { data: current } = await supabase
+    .from('nat_gateways')
+    .select('bot_count')
+    .eq('id', gatewayId)
+    .single()
   
-  if (error) {
+  if (current && current.bot_count > 0) {
     await supabase
       .from('nat_gateways')
-      .update({ bot_count: supabase.raw('GREATEST(bot_count - 1, 0)') })
+      .update({ bot_count: current.bot_count - 1 })
       .eq('id', gatewayId)
   }
 }
