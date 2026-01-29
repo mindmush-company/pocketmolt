@@ -73,124 +73,6 @@ function Reveal({
 
 /* ─── Live threat counter ─── */
 
-/* ─── Approved by Juan ─── */
-function ApprovedByJuanStamp() {
-  const [showModal, setShowModal] = useState(false)
-
-  return (
-    <>
-      <Reveal delay={0.2}>
-        <motion.button
-          onClick={() => setShowModal(true)}
-          className="group relative mx-auto mt-20 block cursor-pointer"
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-        >
-          <div className="relative flex flex-col items-center gap-5 rounded-[20px] border border-white/[0.08] bg-white/[0.04] px-12 py-10 transition-all duration-300 hover:border-[#7D9D7A]/25 hover:bg-white/[0.06]">
-            {/* Profile picture with gradient ring */}
-            <div className="relative">
-              <div className="rounded-full bg-gradient-to-br from-[#7D9D7A] via-[#D4A853]/60 to-[#7D9D7A] p-[2.5px]">
-                <div className="rounded-full bg-black p-[2px]">
-                  <img
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"
-                    alt="Juan — Senior Cybersecurity Expert"
-                    loading="lazy"
-                    className="h-[72px] w-[72px] rounded-full object-cover"
-                  />
-                </div>
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 flex h-[22px] w-[22px] items-center justify-center rounded-full border-[2px] border-black bg-[#7D9D7A]">
-                <CheckCircle className="h-3 w-3 text-white" />
-              </div>
-            </div>
-
-            {/* Text */}
-            <div className="flex flex-col items-center gap-1.5 text-center">
-              <div className="flex items-center gap-1.5">
-                <span className="font-display text-[15px] font-semibold tracking-wide text-foreground">
-                  Approved by Juan
-                </span>
-              </div>
-              <span className="text-[12px] tracking-wide text-foreground/40">
-                Senior Cybersecurity Expert
-              </span>
-            </div>
-
-            <span className="text-[11px] tracking-wider uppercase text-foreground/25 group-hover:text-foreground/40 transition-colors">
-              Who is Juan? →
-            </span>
-          </div>
-        </motion.button>
-      </Reveal>
-
-      {showModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-lg"
-          onClick={() => setShowModal(false)}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.4, 0.25, 1] }}
-            className="relative mx-4 max-w-lg rounded-[24px] border border-white/[0.08] bg-gradient-to-b from-white/[0.07] to-white/[0.03] p-10 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06),0_1px_2px_rgba(0,0,0,0.5),0_8px_16px_rgba(0,0,0,0.3),0_32px_64px_rgba(0,0,0,0.2)]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            {/* Profile header */}
-            <div className="mb-8 flex flex-col items-center text-center">
-              <div className="relative mb-5">
-                <div className="rounded-full bg-gradient-to-br from-[#7D9D7A] via-[#D4A853]/60 to-[#7D9D7A] p-[3px]">
-                  <div className="rounded-full bg-black p-[2px]">
-                    <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=240&h=240&fit=crop&crop=face"
-                      alt="Juan — Senior Cybersecurity Expert"
-                      loading="lazy"
-                    className="h-24 w-24 rounded-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-[2.5px] border-black bg-[#7D9D7A]">
-                  <CheckCircle className="h-4 w-4 text-white" />
-                </div>
-              </div>
-              <h3 className="font-display text-2xl font-bold text-foreground">Juan</h3>
-              <p className="mt-1 text-[13px] text-foreground/50">Senior Cybersecurity Expert</p>
-            </div>
-
-            <div className="space-y-5 text-[15px] leading-relaxed">
-              <p>
-                Juan is a senior cybersecurity expert who has personally
-                reviewed and approved PocketMolt&apos;s entire security
-                architecture. From mTLS configuration to encryption at rest,
-                every layer has been vetted to meet enterprise-grade standards.
-              </p>
-              <p className="text-muted-foreground">
-                His credentials and full security overview will be published
-                here soon. In the meantime, rest assured: your data is in the
-                best hands.
-              </p>
-              <a
-                href="#"
-                className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Linkedin className="h-4 w-4" />
-                View Juan&apos;s LinkedIn
-              </a>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </>
-  )
-}
 
 /* ─── Security Feature Card ─── */
 function SecurityCard({
@@ -630,6 +512,23 @@ export default function Home() {
                       <ArrowUpRight className="h-4 w-4" />
                     </a>
                   </motion.div>
+
+                  {/* Approved by Juan — small trust line */}
+                  <motion.div
+                    className="flex items-center gap-2.5"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face"
+                      alt="Juan"
+                      className="h-6 w-6 rounded-full object-cover ring-1 ring-white/[0.1]"
+                    />
+                    <span className="text-[13px] text-muted-foreground">
+                      Security approved by <span className="text-foreground/70 font-medium">Juan</span>, Senior Cybersecurity Expert
+                    </span>
+                  </motion.div>
                 </motion.div>
 
                 {/* iPhone — sits low, partially behind the security bar like in a pocket */}
@@ -875,6 +774,7 @@ export default function Home() {
                 </div>
               </motion.div>
               </div>
+
             </div>
           </div>
         </section>
@@ -905,12 +805,11 @@ export default function Home() {
               <SecurityCard icon={KeyRound} title="Encryption at rest & in transit" description="AES-256 encryption for stored data, TLS 1.3 for data in motion. Protected whether sitting still or moving." delay={0.2} />
             </div>
 
-            <ApprovedByJuanStamp />
           </div>
         </section>
 
         {/* ── Team ── */}
-        <section id="team" className="w-full py-16 md:py-24">
+        <section id="team" className="w-full py-24 md:py-32">
           <div className="container mx-auto px-4 md:px-6">
             <Reveal>
               <div className="mb-12 max-w-2xl">
