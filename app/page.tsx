@@ -173,9 +173,9 @@ function HorizontalTimeline() {
   const lineWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"])
 
   const steps = [
-    { step: "1", title: "Sign up", description: "Create your account and claim your spot. No credit card required to join the waitlist." },
-    { step: "2", title: "Configure", description: "Add your API keys and preferences through a simple dashboard. No command line, ever." },
-    { step: "3", title: "You're live", description: "Your MoltBot is deployed, secured, and monitored 24/7 by cybersecurity experts." },
+    { step: "1", title: "Sign up", description: "Create your account in seconds. No credit card, no complicated setup." },
+    { step: "2", title: "Paste your keys", description: "Drop your API keys into the dashboard. That's the only thing you need to configure." },
+    { step: "3", title: "Your bot is live", description: "MoltBot is deployed, encrypted, and monitored — running 24/7 without you lifting a finger." },
   ]
 
   return (
@@ -372,25 +372,37 @@ function IPhoneMockup({ className = "" }: { className?: string }) {
 /* ─── Phone Waitlist UI ─── */
 function PhoneWaitlistUI() {
   const [email, setEmail] = useState("")
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [consent, setConsent] = useState(false)
+  const [honeypot, setHoneypot] = useState("")
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error" | "rate-limited">("idle")
+  const [errorMsg, setErrorMsg] = useState("")
 
   const handleSubmit = async () => {
-    if (!email) return
+    if (!email || !consent) return
     setStatus("loading")
+    setErrorMsg("")
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, consent, website: honeypot }),
       })
       if (res.ok) {
         setStatus("success")
         setEmail("")
       } else {
-        setStatus("error")
+        const data = await res.json().catch(() => ({}))
+        if (res.status === 429) {
+          setStatus("rate-limited")
+          setErrorMsg(data.error ?? "Too many requests. Try again later.")
+        } else {
+          setStatus("error")
+          setErrorMsg(data.error ?? "Something went wrong. Try again.")
+        }
       }
     } catch {
       setStatus("error")
+      setErrorMsg("Something went wrong. Try again.")
     }
   }
 
@@ -403,7 +415,7 @@ function PhoneWaitlistUI() {
         </div>
         <p className="text-[15px] font-semibold text-white">PocketMolt</p>
         <p className="max-w-[170px] text-center text-[12px] leading-snug text-white/40">
-          Your MoltBot, secured &amp; ready to go
+          Deploy your MoltBot in minutes
         </p>
       </div>
 
@@ -411,7 +423,7 @@ function PhoneWaitlistUI() {
       <div className="w-full space-y-2.5 pb-6">
         {status === "success" ? (
           <div className="flex flex-col items-center gap-2 py-4">
-            <CheckCircle className="h-6 w-6 text-[#3B82F6]" />
+            <CheckCircle className="h-6 w-6 text-[#A855F7]" />
             <p className="text-[13px] font-medium text-white/80">You&apos;re on the list!</p>
           </div>
         ) : (
@@ -422,7 +434,7 @@ function PhoneWaitlistUI() {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value)
-                if (status === "error") setStatus("idle")
+                if (status === "error" || status === "rate-limited") setStatus("idle")
               }}
               onFocus={(e) => {
                 setTimeout(() => {
@@ -431,17 +443,42 @@ function PhoneWaitlistUI() {
               }}
               className="w-full rounded-xl border border-white/[0.06] bg-white/[0.05] px-4 py-3 text-[14px] text-white placeholder:text-white/30 outline-none focus:border-primary/40 shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-all"
             />
+            {/* Honeypot — hidden from humans, bots fill it */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0 }}
+            />
             <button
               onClick={handleSubmit}
-              disabled={status === "loading"}
-              className="w-full rounded-xl bg-gradient-to-b from-primary to-primary/85 py-3 text-[14px] font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(59,130,246,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(59,130,246,0.3)]"
+              disabled={status === "loading" || !consent}
+              className="w-full rounded-xl border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(220,218,214,0.9)_50%,rgba(180,178,174,0.85)_100%)] py-3 text-[14px] font-semibold text-[#111] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.25),0_8px_20px_rgba(0,0,0,0.15)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.3),0_12px_28px_rgba(0,0,0,0.2)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
+            {/* GDPR consent */}
+            <label className="flex items-start gap-2 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-white/20 bg-white/5 accent-primary"
+              />
+              <span className="text-[11px] leading-snug text-white/35">
+                I agree to the{" "}
+                <a href="/terms" target="_blank" className="underline hover:text-white/50">Terms of Service</a>{" "}
+                and to receive updates about PocketMolt. No spam, unsubscribe anytime.
+              </span>
+            </label>
           </>
         )}
-        {status === "error" && (
-          <p className="text-center text-[11px] text-red-400">Something went wrong. Try again.</p>
+        {(status === "error" || status === "rate-limited") && (
+          <p className="text-center text-[11px] text-red-400">{errorMsg}</p>
         )}
         <p className="text-center text-[11px] text-white/25">
           1,000 spots, first come, first serve
@@ -492,7 +529,7 @@ export default function Home() {
             <a href="#waitlist" className="ml-1 md:ml-3">
               <Button
                 size="sm"
-                className="h-9 rounded-lg bg-gradient-to-b from-primary to-primary/85 px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(59,130,246,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(59,130,246,0.3)]"
+                className="h-9 rounded-lg border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(220,218,214,0.9)_50%,rgba(180,178,174,0.85)_100%)] px-5 text-sm font-semibold text-[#111] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] hover:brightness-105 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.25),0_8px_20px_rgba(0,0,0,0.15)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.3),0_12px_28px_rgba(0,0,0,0.2),0_0_20px_rgba(255,255,255,0.05)]"
               >
                 Join Waitlist
               </Button>
@@ -510,8 +547,8 @@ export default function Home() {
           {/* Ambient glow */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-[15%] top-[20%] h-[600px] w-[600px] rounded-full bg-primary/6 blur-[180px]" />
-            <div className="absolute left-[5%] top-[10%] h-[400px] w-[400px] rounded-full bg-[#D4A853]/5 blur-[130px]" />
-            <div className="absolute right-[10%] bottom-[20%] h-[350px] w-[350px] rounded-full bg-[#3B82F6]/4 blur-[120px]" />
+            <div className="absolute left-[5%] top-[10%] h-[400px] w-[400px] rounded-full bg-[#6366F1]/5 blur-[130px]" />
+            <div className="absolute right-[10%] bottom-[20%] h-[350px] w-[350px] rounded-full bg-[#A855F7]/4 blur-[120px]" />
           </div>
 
           <motion.div style={{ opacity: heroOpacity, y: heroY }} className="relative w-full">
@@ -534,9 +571,9 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.1, ease: [0.25, 0.4, 0.25, 1] }}
                   >
-                    Easily & Safely
+                    MoltBot in Your
                     <br />
-                    Set Up <span className="text-foreground">MoltBot</span>
+                    Pocket in Seconds
                   </motion.h1>
 
                   <motion.p
@@ -545,11 +582,11 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.4, 0.25, 1] }}
                   >
-                    No terminal. No VPS. No headaches.{" "}
+                    PocketMolt is the app that deploys, secures, and monitors your MoltBot for you.{" "}
                     <span className="text-foreground font-medium">
-                      Enterprise-grade security built in.
+                      No server setup. No security configs. No maintenance.
                     </span>{" "}
-                    Everything is handled for you. Just sign up and go.
+                    Just paste your keys and you&apos;re live.
                   </motion.p>
 
                   <motion.div
@@ -560,7 +597,7 @@ export default function Home() {
                   >
                     <Button
                       onClick={() => setHeroFocusPhone(true)}
-                      className="h-13 rounded-xl bg-gradient-to-b from-primary to-primary/85 px-8 text-[15px] font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(59,130,246,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(59,130,246,0.3)]"
+                      className="h-13 rounded-xl border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(220,218,214,0.9)_50%,rgba(180,178,174,0.85)_100%)] px-8 text-[15px] font-semibold text-[#111] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] hover:brightness-105 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.25),0_8px_20px_rgba(0,0,0,0.15),0_0_40px_rgba(255,255,255,0.04)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.3),0_16px_32px_rgba(0,0,0,0.2),0_0_50px_rgba(255,255,255,0.06)]"
                     >
                       Join Waitlist
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -569,7 +606,7 @@ export default function Home() {
                       href="#demo"
                       className="inline-flex h-13 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-8 text-[15px] font-medium text-foreground transition-all duration-200 hover:-translate-y-[1px] hover:border-white/[0.12] hover:bg-white/[0.05]"
                     >
-                      Watch the demo
+                      See how it works
                       <ArrowUpRight className="h-4 w-4" />
                     </a>
                   </motion.div>
@@ -632,10 +669,10 @@ export default function Home() {
           >
             <div className="container mx-auto grid grid-cols-2 gap-y-0 px-4 py-0 md:grid-cols-4 md:px-6">
               {[
-                { title: "End-to-end", desc: "encrypted", icon: Lock },
-                { title: "Zero data", desc: "stored", icon: Database },
-                { title: "mTLS", desc: "authenticated", icon: ShieldCheck },
-                { title: "24/7", desc: "monitored", icon: Eye },
+                { title: "Fully encrypted", desc: "by default", icon: Lock },
+                { title: "Your data", desc: "stays yours", icon: Database },
+                { title: "Always on", desc: "99.9% uptime", icon: ShieldCheck },
+                { title: "Monitored", desc: "around the clock", icon: Eye },
               ].map((item, i) => (
                 <div
                   key={item.title}
@@ -667,10 +704,10 @@ export default function Home() {
             <Reveal>
               <div className="mb-12 max-w-2xl mx-auto text-center">
                 <h2 className="font-display text-3xl font-bold text-foreground sm:text-4xl md:text-5xl">
-                  See it in action
+                  See how it works
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  Watch how PocketMolt takes you from zero to a fully secured MoltBot.
+                  See how fast you can go from zero to a running, secured MoltBot — without touching a terminal.
                 </p>
               </div>
             </Reveal>
@@ -685,15 +722,7 @@ export default function Home() {
               <div className="relative overflow-hidden rounded-[20px] border border-white/[0.08] bg-white/[0.03] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06),0_4px_12px_rgba(0,0,0,0.4),0_24px_48px_rgba(0,0,0,0.2)]">
                 {/* 16:9 aspect ratio container */}
                 <div className="relative aspect-video w-full bg-black/40">
-                  {/* Placeholder — replace src with your actual video URL */}
-                  <iframe
-                    className="absolute inset-0 h-full w-full"
-                    src=""
-                    title="PocketMolt Demo"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                  {/* Fallback overlay shown when no video src is set */}
+                  {/* Placeholder — replace with actual video iframe when ready */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.05] backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/[0.08]">
                       <svg className="ml-1 h-6 w-6 text-foreground/70" viewBox="0 0 24 24" fill="currentColor">
@@ -711,21 +740,21 @@ export default function Home() {
         {/* ── Cybersecurity Bento Grid ── */}
         <section className="relative w-full overflow-hidden py-24 md:py-32">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-[20%] top-0 h-[600px] w-[600px] rounded-full bg-[#3B82F6]/4 blur-[150px]" />
-            <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#3B82F6]/3 blur-[120px]" />
+            <div className="absolute left-[20%] top-0 h-[600px] w-[600px] rounded-full bg-[#A855F7]/4 blur-[150px]" />
+            <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#A855F7]/3 blur-[120px]" />
           </div>
 
           <div className="container relative mx-auto px-4 md:px-6">
             <Reveal>
               <div className="mb-16 max-w-3xl">
                 <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
-                  Self-hosting MoltBot is{" "}
-                  <span className="text-foreground">dangerous</span>
+                  Why not just
+                  self-host?
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                  Without proper security, your bot is an open door for hackers.
-                  Exposed API keys, unencrypted traffic, no firewall. One
-                  misconfiguration and your data is compromised.
+                  Because one wrong config and your bot is wide open. Leaked API keys,
+                  no firewall, no encryption. Most people find out they were hacked
+                  weeks after it happened.
                 </p>
               </div>
             </Reveal>
@@ -741,29 +770,29 @@ export default function Home() {
                 transition={{ duration: 0.6 }}
               >
                 {/* Hover gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#3B82F6]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#A855F7]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
 
                 <div className="relative flex h-full flex-col p-8 md:p-10">
                   <div className="mb-8">
                     <h3 className="font-display text-2xl font-bold text-foreground">
-                      Self-hosting leaves you exposed
+                      What you&apos;re risking on your own
                     </h3>
                     <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-                      No firewall, no monitoring, no encryption by default. One misconfiguration and your data is compromised.
+                      Self-hosting means you&apos;re responsible for every layer of security. Most setups have critical gaps from day one.
                     </p>
                   </div>
 
                   {/* Risk list */}
                   <ul className="mt-8 space-y-3">
                     {[
-                      "Exposed to brute force & DDoS attacks",
-                      "API keys stored in plaintext config files",
-                      "No encryption unless you configure it",
-                      "VPS security is your problem",
-                      "No monitoring. You won't know until it's too late",
+                      "Your bot can be taken down by a simple DDoS attack",
+                      "API keys sit in plaintext — anyone with access can read them",
+                      "Traffic is unencrypted unless you set it up yourself",
+                      "You're responsible for patching, updates, and firewall rules",
+                      "No alerts — you won't know you've been breached until it's too late",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-3 text-[14px] text-muted-foreground">
-                        <X className="mt-0.5 h-4 w-4 shrink-0 text-[#3B82F6]/60" />
+                        <X className="mt-0.5 h-4 w-4 shrink-0 text-[#A855F7]/60" />
                         {item}
                       </li>
                     ))}
@@ -774,39 +803,39 @@ export default function Home() {
               <div className="grid gap-8 md:grid-cols-2">
               {/* ── PocketMolt Protection ── */}
               <motion.div
-                className="group relative overflow-hidden rounded-[24px] border border-[#3B82F6]/[0.12] bg-gradient-to-br from-[#3B82F6]/[0.06] to-white/[0.03] backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(59,130,246,0.06),0_1px_2px_rgba(0,0,0,0.4),0_8px_16px_rgba(0,0,0,0.2),0_32px_64px_rgba(0,0,0,0.1)]"
+                className="group relative overflow-hidden rounded-[24px] border border-[#A855F7]/[0.12] bg-gradient-to-br from-[#A855F7]/[0.06] to-white/[0.03] backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(168,85,247,0.06),0_1px_2px_rgba(0,0,0,0.4),0_8px_16px_rgba(0,0,0,0.2),0_32px_64px_rgba(0,0,0,0.1)]"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.1 }}
               >
                 {/* Hover gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#A855F7]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
 
                 <div className="relative p-8 md:p-10">
                   <div className="mb-6">
                     <h3 className="font-display text-2xl font-bold text-foreground">
-                      PocketMolt Protection
+                      What PocketMolt handles for you
                     </h3>
                     <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-                      Every connection is authenticated, every byte is encrypted, every threat is monitored.
+                      All of this is set up automatically when you deploy through PocketMolt. Zero config required.
                     </p>
                   </div>
 
                   {/* Floating protection UI */}
-                  <div className="relative mt-4 rounded-[16px] border border-[#3B82F6]/[0.06] bg-white/[0.02] p-5 backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(59,130,246,0.04)]">
+                  <div className="relative mt-4 rounded-[16px] border border-[#A855F7]/[0.06] bg-white/[0.02] p-5 backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(168,85,247,0.04)]">
                     <div className="space-y-3.5">
                       {[
-                        { icon: Lock, label: "Mutual TLS on every connection" },
-                        { icon: Network, label: "Firewall with strict inbound rules" },
-                        { icon: Database, label: "Full encryption stack" },
-                        { icon: Eye, label: "24/7 active monitoring" },
-                        { icon: ScanLine, label: "Automated vulnerability scanning" },
-                        { icon: Fingerprint, label: "Zero-trust architecture" },
+                        { icon: Lock, label: "Every connection verified & encrypted" },
+                        { icon: Network, label: "Firewall blocks unauthorized access" },
+                        { icon: Database, label: "Your data encrypted at rest & in transit" },
+                        { icon: Eye, label: "Threats detected before they reach you" },
+                        { icon: ScanLine, label: "Vulnerabilities patched automatically" },
+                        { icon: Fingerprint, label: "Nobody gets in without authorization" },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center gap-3">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#3B82F6]/10">
-                            <item.icon className="h-3.5 w-3.5 text-[#3B82F6]" />
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#A855F7]/10">
+                            <item.icon className="h-3.5 w-3.5 text-[#A855F7]" />
                           </div>
                           <p className="text-[14px] font-medium text-foreground">{item.label}</p>
                         </div>
@@ -829,7 +858,7 @@ export default function Home() {
                 <div className="relative p-8 md:p-10">
                   <div className="mb-8">
                     <h3 className="font-display text-2xl font-bold text-foreground">
-                      Night and day difference
+                      The difference is everything
                     </h3>
                   </div>
 
@@ -837,25 +866,25 @@ export default function Home() {
                   <div className="overflow-hidden rounded-[16px] border border-white/[0.06]">
                     {/* Header row */}
                     <div className="grid grid-cols-[1fr_1fr] border-b border-white/[0.06] bg-white/[0.03]">
-                      <div className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#3B82F6]/70">Self-hosted</div>
-                      <div className="border-l border-white/[0.06] px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#3B82F6]">PocketMolt</div>
+                      <div className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#A855F7]/70">Self-hosted</div>
+                      <div className="border-l border-white/[0.06] px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#A855F7]">PocketMolt</div>
                     </div>
 
                     {/* Comparison rows */}
                     {[
-                      { self: "No encryption", pocket: "AES-256 + TLS 1.3" },
-                      { self: "Open ports", pocket: "Strict firewall rules" },
-                      { self: "No monitoring", pocket: "24/7 expert monitoring" },
-                      { self: "DIY security", pocket: "Approved by Juan" },
-                      { self: "Plaintext configs", pocket: "Encrypted at rest" },
+                      { self: "Data exposed in transit", pocket: "Encrypted end-to-end" },
+                      { self: "Open to the internet", pocket: "Locked down by default" },
+                      { self: "You find out after the hack", pocket: "Alerts before damage" },
+                      { self: "Hours of manual setup", pocket: "Live in minutes" },
+                      { self: "Keys in plaintext files", pocket: "Secrets vault, encrypted" },
                     ].map((row, i) => (
                       <div key={row.self} className={`grid grid-cols-[1fr_1fr] ${i < 4 ? "border-b border-white/[0.04]" : ""}`}>
                         <div className="flex items-center gap-2.5 px-5 py-3.5 text-[13px] text-muted-foreground/50">
-                          <X className="h-3.5 w-3.5 shrink-0 text-[#3B82F6]/40" />
+                          <X className="h-3.5 w-3.5 shrink-0 text-[#A855F7]/40" />
                           {row.self}
                         </div>
                         <div className="flex items-center gap-2.5 border-l border-white/[0.06] px-5 py-3.5 text-[13px] font-medium text-foreground/80">
-                          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-[#3B82F6]" />
+                          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-[#A855F7]" />
                           {row.pocket}
                         </div>
                       </div>
@@ -872,27 +901,27 @@ export default function Home() {
         {/* ── Security Deep Dive ── */}
         <section id="security" className="relative w-full py-24 md:py-32">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-0 top-1/4 h-[400px] w-[400px] rounded-full bg-[#3B82F6]/4 blur-[120px]" />
+            <div className="absolute left-0 top-1/4 h-[400px] w-[400px] rounded-full bg-[#A855F7]/4 blur-[120px]" />
           </div>
 
           <div className="container relative mx-auto px-4 md:px-6">
             <Reveal>
               <div className="mb-20 max-w-2xl">
                 <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
-                  Built like a <span className="text-foreground">fortress</span>
+                  Security you don&apos;t have to think about
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                  Every component of PocketMolt is designed with security as the
-                  foundation, not an afterthought.
+                  Every layer of protection is built in from the start. You get enterprise-grade
+                  security without configuring a single thing.
                 </p>
               </div>
             </Reveal>
 
             <div className="grid gap-8 sm:grid-cols-2">
-              <SecurityCard icon={Lock} title="Mutual TLS (mTLS)" description="Both client and server authenticate each other with certificates. No impersonation, no man-in-the-middle attacks possible." delay={0} />
-              <SecurityCard icon={Network} title="Network inbound rules" description="External access is blocked by default. Strict firewall rules ensure only authorized traffic reaches your environment." delay={0.1} />
-              <SecurityCard icon={Database} title="Encryption at every layer" description="Database, communication channels, server internals: every single layer is encrypted. No gaps, no exceptions." delay={0.15} />
-              <SecurityCard icon={KeyRound} title="Encryption at rest & in transit" description="AES-256 encryption for stored data, TLS 1.3 for data in motion. Protected whether sitting still or moving." delay={0.2} />
+              <SecurityCard icon={Lock} title="Verified connections only" description="Both sides of every connection prove their identity with certificates. Impersonation and interception are impossible." delay={0} />
+              <SecurityCard icon={Network} title="Locked down by default" description="All external access is blocked unless explicitly allowed. Only authorized traffic reaches your bot." delay={0.1} />
+              <SecurityCard icon={Database} title="Nothing stored in plaintext" description="Your database, configs, and API keys are encrypted at every layer. No gaps, no exceptions." delay={0.15} />
+              <SecurityCard icon={KeyRound} title="Protected at rest & in motion" description="AES-256 for stored data, TLS 1.3 for data in transit. Your information is safe whether it's sitting still or moving." delay={0.2} />
             </div>
 
           </div>
@@ -907,7 +936,7 @@ export default function Home() {
                   Meet the team
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  The people building and securing PocketMolt.
+                  The people making sure your MoltBot runs safely, so you never have to worry about it.
                 </p>
               </div>
             </Reveal>
@@ -917,7 +946,7 @@ export default function Home() {
               <TeamCard
                 name="Rafael"
                 role="Founder"
-                bio="Building the easiest way to deploy MoltBot. No terminal, no VPS, no headaches."
+                bio="Obsessed with making MoltBot deployment something anyone can do — no tech skills needed."
                 image="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop&crop=face"
                 socials={{ linkedin: "#", x: "#" }}
                 delay={0}
@@ -925,7 +954,7 @@ export default function Home() {
               <TeamCard
                 name="Juan"
                 role="Cybersecurity Lead"
-                bio="Cybersecurity expert keeping PocketMolt safe 24/7."
+                bio="Makes sure every bot deployed through PocketMolt is locked down and monitored 24/7."
                 image="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop&crop=face"
                 socials={{ linkedin: "#" }}
                 delay={0.1}
@@ -958,12 +987,12 @@ export default function Home() {
 
             <div className="grid gap-0 md:grid-cols-2 md:gap-x-16">
               {[
-                { q: "What is PocketMolt?", a: "PocketMolt lets you deploy and manage your own MoltBot without touching a terminal. We handle hosting, security, and monitoring so you don't have to." },
-                { q: "Do I need technical knowledge?", a: "No. PocketMolt is designed for non-technical users. Just sign up, add your API keys through our dashboard, and you're live." },
-                { q: "How is my data secured?", a: "AES-256 encryption at rest, TLS 1.3 in transit, mutual TLS authentication, strict firewall rules, and 24/7 monitoring by cybersecurity experts." },
-                { q: "What happens after the waitlist?", a: "Once you're off the waitlist, you'll get immediate access to set up your MoltBot. Initial launch is capped at 1,000 users for quality assurance." },
-                { q: "Can I migrate my existing MoltBot?", a: "Yes. We provide a simple migration path from self-hosted setups. Your configs and data transfer securely." },
-                { q: "What does it cost?", a: "Pricing will be announced closer to launch. Waitlist members get early-bird pricing." },
+                { q: "What exactly is PocketMolt?", a: "PocketMolt is an app that deploys and runs your MoltBot for you. You sign up, paste your API keys, and your bot is live — fully hosted, secured, and monitored. No servers, no terminal, no maintenance." },
+                { q: "Do I need any technical knowledge?", a: "None. If you can copy and paste an API key, you can use PocketMolt. The entire setup happens through a simple dashboard." },
+                { q: "Is my data safe?", a: "Yes. Everything is encrypted — your keys, your data, your traffic. We use the same security standards as banks and enterprise software. And a dedicated cybersecurity expert monitors every deployment." },
+                { q: "What happens after I join the waitlist?", a: "When your spot opens, you get instant access to deploy your MoltBot. The initial launch is limited to 1,000 users so we can guarantee quality for everyone." },
+                { q: "I already self-host MoltBot. Can I switch?", a: "Yes. We built a migration path that moves your configs and data over securely. You keep everything, just without the maintenance burden." },
+                { q: "What will it cost?", a: "Pricing will be announced at launch. Everyone on the waitlist gets early-bird pricing locked in." },
               ].map((item, i) => (
                 <FAQItem key={item.q} question={item.q} answer={item.a} delay={i * 0.05} />
               ))}
@@ -986,7 +1015,7 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true }}
         >
-          Be The First To Get Access
+          Get Your MoltBot Running
         </motion.h2>
 
         {/* iPhone Mockup */}
