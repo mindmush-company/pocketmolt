@@ -4,6 +4,7 @@ import { generateCloudInitWithCerts } from './cloud-init'
 import { attachServerToInfrastructure } from './network'
 import { generateBotCertificateFromCA } from '@/lib/crypto/ca'
 import { encrypt } from '@/lib/crypto/encryption'
+import crypto from 'crypto'
 
 const SSH_KEY_NAME = 'pocketmolt-master'
 const SERVER_TYPE = 'cx23'
@@ -136,6 +137,8 @@ export async function provisionServer(
     const { certificate, privateKey, caCertificate } = await generateBotCertificateFromCA(botId)
     const encryptedPrivateKey = encrypt(privateKey)
 
+    const gatewayToken = crypto.randomBytes(32).toString('hex')
+
     const sshKey = await getOrCreateSSHKey()
     console.log(`Using SSH key: ${sshKey.name} (${sshKey.id})`)
 
@@ -146,6 +149,7 @@ export async function provisionServer(
       clientCert: certificate,
       clientKey: privateKey,
       caCert: caCertificate,
+      gatewayToken,
     })
 
     const serverName = `pocketmolt-${botId.slice(0, 8)}`

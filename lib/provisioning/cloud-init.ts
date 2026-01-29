@@ -9,6 +9,7 @@ interface CloudInitOptions {
   clientCert: string
   clientKey: string
   caCert: string
+  gatewayToken: string
 }
 
 export function generateCloudInit(botId: string, botName: string): string {
@@ -19,6 +20,7 @@ export function generateCloudInit(botId: string, botName: string): string {
     clientCert: '',
     clientKey: '',
     caCert: '',
+    gatewayToken: '',
   })
 }
 
@@ -27,7 +29,7 @@ function indentCert(cert: string): string {
 }
 
 export function generateCloudInitWithCerts(options: CloudInitOptions): string {
-  const { botId, botName, privateIp, clientCert, clientKey, caCert } = options
+  const { botId, botName, privateIp, clientCert, clientKey, caCert, gatewayToken } = options
 
   const configApiUrl = `https://${BACKEND_IP}:${CONFIG_API_PORT}`
 
@@ -114,6 +116,7 @@ ${indentCert(caCert)}
       MOLTEOF
       
       echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY" > /opt/pocketmolt/env
+      echo "CLAWDBOT_GATEWAY_TOKEN=${gatewayToken}" >> /opt/pocketmolt/env
       chmod 600 /opt/pocketmolt/env
       
       echo "Configuration written to $MOLTBOT_CONFIG"
@@ -131,7 +134,7 @@ ${indentCert(caCert)}
       WorkingDirectory=/opt/pocketmolt
       EnvironmentFile=/opt/pocketmolt/env
       ExecStartPre=/opt/pocketmolt/bin/fetch-config.sh
-      ExecStart=/usr/bin/clawdbot gateway --allow-unconfigured --bind loopback
+      ExecStart=/usr/bin/clawdbot gateway --allow-unconfigured --bind lan --token ${gatewayToken}
       Restart=always
       RestartSec=10
       

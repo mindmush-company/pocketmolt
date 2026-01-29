@@ -1,7 +1,7 @@
 import { createAdminClient } from '../lib/supabase/admin'
 import { encrypt } from '../lib/crypto/encryption'
 
-const BOT_ID = 'ba33c1ad-6ff2-4f56-a3bf-83c44700c7ca'
+const BOT_ID = process.env.BOT_ID || 'ba33c1ad-6ff2-4f56-a3bf-83c44700c7ca'
 const ANTHROPIC_API_KEY = process.env.DEFAULT_ANTHROPIC_API_KEY
 
 async function main() {
