@@ -22,7 +22,7 @@ import {
   Eye,
   Fingerprint,
   ScanLine,
-  Instagram,
+  ChevronDown,
 } from "lucide-react"
 
 gsap.registerPlugin(ScrollTrigger)
@@ -67,6 +67,54 @@ function Reveal({
       className={className}
     >
       {children}
+    </motion.div>
+  )
+}
+
+/* ─── Hero Background Pattern ─── */
+function HeroPattern() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* Dot grid — circuit board feel */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
+      {/* Radial fade so dots dissolve toward edges */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,transparent_30%,#000000_100%)]" />
+    </div>
+  )
+}
+
+/* ─── FAQ Item ─── */
+function FAQItem({ question, answer, delay = 0 }: { question: string; answer: string; delay?: number }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <motion.div
+      className="border-b border-white/[0.06]"
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between gap-4 py-5 text-left"
+      >
+        <span className="text-[16px] font-medium text-foreground">{question}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <motion.div
+        initial={false}
+        animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
+        className="overflow-hidden"
+      >
+        <p className="pb-5 text-[15px] leading-relaxed text-muted-foreground">{answer}</p>
+      </motion.div>
     </motion.div>
   )
 }
@@ -353,7 +401,7 @@ function PhoneWaitlistUI() {
       <div className="w-full space-y-2.5 pb-6">
         {status === "success" ? (
           <div className="flex flex-col items-center gap-2 py-4">
-            <CheckCircle className="h-6 w-6 text-[#7D9D7A]" />
+            <CheckCircle className="h-6 w-6 text-[#3B82F6]" />
             <p className="text-[13px] font-medium text-white/80">You&apos;re on the list!</p>
           </div>
         ) : (
@@ -376,7 +424,7 @@ function PhoneWaitlistUI() {
             <button
               onClick={handleSubmit}
               disabled={status === "loading"}
-              className="w-full rounded-xl bg-gradient-to-b from-primary to-primary/85 py-3 text-[14px] font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(220,38,38,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(220,38,38,0.3)]"
+              className="w-full rounded-xl bg-gradient-to-b from-primary to-primary/85 py-3 text-[14px] font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(59,130,246,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(59,130,246,0.3)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
@@ -434,7 +482,7 @@ export default function Home() {
             <a href="#waitlist" className="ml-1 md:ml-3">
               <Button
                 size="sm"
-                className="h-9 rounded-lg bg-gradient-to-b from-primary to-primary/85 px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(220,38,38,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(220,38,38,0.3)]"
+                className="h-9 rounded-lg bg-gradient-to-b from-primary to-primary/85 px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(59,130,246,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(59,130,246,0.3)]"
               >
                 Join Waitlist
               </Button>
@@ -446,11 +494,14 @@ export default function Home() {
       <main className="flex-1">
         {/* ── Hero ── */}
         <section ref={heroRef} className="relative flex min-h-[100dvh] flex-col justify-center overflow-hidden pt-24 md:pt-32">
+          {/* Star field */}
+          <HeroPattern />
+
           {/* Ambient glow */}
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-[15%] top-[20%] h-[600px] w-[600px] rounded-full bg-primary/6 blur-[180px]" />
             <div className="absolute left-[5%] top-[10%] h-[400px] w-[400px] rounded-full bg-[#D4A853]/5 blur-[130px]" />
-            <div className="absolute right-[10%] bottom-[20%] h-[350px] w-[350px] rounded-full bg-[#7D9D7A]/4 blur-[120px]" />
+            <div className="absolute right-[10%] bottom-[20%] h-[350px] w-[350px] rounded-full bg-[#3B82F6]/4 blur-[120px]" />
           </div>
 
           <motion.div style={{ opacity: heroOpacity, y: heroY }} className="relative w-full">
@@ -499,7 +550,7 @@ export default function Home() {
                   >
                     <Button
                       onClick={() => setHeroFocusPhone(true)}
-                      className="h-13 rounded-xl bg-gradient-to-b from-primary to-primary/85 px-8 text-[15px] font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(220,38,38,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(220,38,38,0.3)]"
+                      className="h-13 rounded-xl bg-gradient-to-b from-primary to-primary/85 px-8 text-[15px] font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(59,130,246,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(59,130,246,0.3)]"
                     >
                       Join Waitlist
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -513,20 +564,16 @@ export default function Home() {
                     </a>
                   </motion.div>
 
-                  {/* Approved by Juan — small trust line */}
+                  {/* Scarcity trust line */}
                   <motion.div
-                    className="flex items-center gap-2.5"
+                    className="flex items-center gap-2"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.5 }}
                   >
-                    <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face"
-                      alt="Juan"
-                      className="h-6 w-6 rounded-full object-cover ring-1 ring-white/[0.1]"
-                    />
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                     <span className="text-[13px] text-muted-foreground">
-                      Security approved by <span className="text-foreground/70 font-medium">Juan</span>, Senior Cybersecurity Expert
+                      Initial launch capped at <span className="text-foreground/70 font-medium">1,000 users</span>
                     </span>
                   </motion.div>
                 </motion.div>
@@ -621,8 +668,8 @@ export default function Home() {
         {/* ── Cybersecurity Bento Grid ── */}
         <section className="relative w-full overflow-hidden py-24 md:py-32">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-[20%] top-0 h-[600px] w-[600px] rounded-full bg-[#7D9D7A]/4 blur-[150px]" />
-            <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#DC2626]/3 blur-[120px]" />
+            <div className="absolute left-[20%] top-0 h-[600px] w-[600px] rounded-full bg-[#3B82F6]/4 blur-[150px]" />
+            <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#3B82F6]/3 blur-[120px]" />
           </div>
 
           <div className="container relative mx-auto px-4 md:px-6">
@@ -630,7 +677,7 @@ export default function Home() {
               <div className="mb-16 max-w-3xl">
                 <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
                   Self-hosting MoltBot is{" "}
-                  <span className="text-[#DC2626]">dangerous</span>
+                  <span className="text-[#3B82F6]">dangerous</span>
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   Without proper security, your bot is an open door for hackers.
@@ -651,7 +698,7 @@ export default function Home() {
                 transition={{ duration: 0.6 }}
               >
                 {/* Hover gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#DC2626]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#3B82F6]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
 
                 <div className="relative flex h-full flex-col p-8 md:p-10">
                   <div className="mb-8">
@@ -673,7 +720,7 @@ export default function Home() {
                       "No monitoring. You won't know until it's too late",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-3 text-[14px] text-muted-foreground">
-                        <X className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]/60" />
+                        <X className="mt-0.5 h-4 w-4 shrink-0 text-[#3B82F6]/60" />
                         {item}
                       </li>
                     ))}
@@ -684,14 +731,14 @@ export default function Home() {
               <div className="grid gap-8 md:grid-cols-2">
               {/* ── PocketMolt Protection ── */}
               <motion.div
-                className="group relative overflow-hidden rounded-[24px] border border-[#7D9D7A]/[0.12] bg-gradient-to-br from-[#7D9D7A]/[0.06] to-white/[0.03] backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(125,157,122,0.06),0_1px_2px_rgba(0,0,0,0.4),0_8px_16px_rgba(0,0,0,0.2),0_32px_64px_rgba(0,0,0,0.1)]"
+                className="group relative overflow-hidden rounded-[24px] border border-[#3B82F6]/[0.12] bg-gradient-to-br from-[#3B82F6]/[0.06] to-white/[0.03] backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(59,130,246,0.06),0_1px_2px_rgba(0,0,0,0.4),0_8px_16px_rgba(0,0,0,0.2),0_32px_64px_rgba(0,0,0,0.1)]"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.1 }}
               >
                 {/* Hover gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#7D9D7A]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
 
                 <div className="relative p-8 md:p-10">
                   <div className="mb-6">
@@ -704,7 +751,7 @@ export default function Home() {
                   </div>
 
                   {/* Floating protection UI */}
-                  <div className="relative mt-4 rounded-[16px] border border-[#7D9D7A]/[0.06] bg-white/[0.02] p-5 backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(125,157,122,0.04)]">
+                  <div className="relative mt-4 rounded-[16px] border border-[#3B82F6]/[0.06] bg-white/[0.02] p-5 backdrop-blur-sm [box-shadow:inset_0_1px_0_rgba(59,130,246,0.04)]">
                     <div className="space-y-3.5">
                       {[
                         { icon: Lock, label: "Mutual TLS on every connection" },
@@ -715,8 +762,8 @@ export default function Home() {
                         { icon: Fingerprint, label: "Zero-trust architecture" },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center gap-3">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7D9D7A]/10">
-                            <item.icon className="h-3.5 w-3.5 text-[#7D9D7A]" />
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#3B82F6]/10">
+                            <item.icon className="h-3.5 w-3.5 text-[#3B82F6]" />
                           </div>
                           <p className="text-[14px] font-medium text-foreground">{item.label}</p>
                         </div>
@@ -747,8 +794,8 @@ export default function Home() {
                   <div className="overflow-hidden rounded-[16px] border border-white/[0.06]">
                     {/* Header row */}
                     <div className="grid grid-cols-[1fr_1fr] border-b border-white/[0.06] bg-white/[0.03]">
-                      <div className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#DC2626]/70">Self-hosted</div>
-                      <div className="border-l border-white/[0.06] px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#7D9D7A]">PocketMolt</div>
+                      <div className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#3B82F6]/70">Self-hosted</div>
+                      <div className="border-l border-white/[0.06] px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#3B82F6]">PocketMolt</div>
                     </div>
 
                     {/* Comparison rows */}
@@ -761,11 +808,11 @@ export default function Home() {
                     ].map((row, i) => (
                       <div key={row.self} className={`grid grid-cols-[1fr_1fr] ${i < 4 ? "border-b border-white/[0.04]" : ""}`}>
                         <div className="flex items-center gap-2.5 px-5 py-3.5 text-[13px] text-muted-foreground/50">
-                          <X className="h-3.5 w-3.5 shrink-0 text-[#DC2626]/40" />
+                          <X className="h-3.5 w-3.5 shrink-0 text-[#3B82F6]/40" />
                           {row.self}
                         </div>
                         <div className="flex items-center gap-2.5 border-l border-white/[0.06] px-5 py-3.5 text-[13px] font-medium text-foreground/80">
-                          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-[#7D9D7A]" />
+                          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-[#3B82F6]" />
                           {row.pocket}
                         </div>
                       </div>
@@ -782,14 +829,14 @@ export default function Home() {
         {/* ── Security Deep Dive ── */}
         <section id="security" className="relative w-full py-24 md:py-32">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-0 top-1/4 h-[400px] w-[400px] rounded-full bg-[#7D9D7A]/4 blur-[120px]" />
+            <div className="absolute left-0 top-1/4 h-[400px] w-[400px] rounded-full bg-[#3B82F6]/4 blur-[120px]" />
           </div>
 
           <div className="container relative mx-auto px-4 md:px-6">
             <Reveal>
               <div className="mb-20 max-w-2xl">
                 <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
-                  Built like a <span className="text-[#7D9D7A]">fortress</span>
+                  Built like a <span className="text-[#3B82F6]">fortress</span>
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   Every component of PocketMolt is designed with security as the
@@ -852,6 +899,35 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── FAQ ── */}
+        <section className="w-full py-24 md:py-32">
+          <div className="container mx-auto px-4 md:px-6">
+            <Reveal>
+              <div className="mb-12 max-w-2xl">
+                <h2 className="font-display text-3xl font-bold text-foreground sm:text-4xl md:text-5xl">
+                  Frequently asked questions
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                  Everything you need to know about PocketMolt.
+                </p>
+              </div>
+            </Reveal>
+
+            <div className="grid gap-0 md:grid-cols-2 md:gap-x-16">
+              {[
+                { q: "What is PocketMolt?", a: "PocketMolt lets you deploy and manage your own MoltBot without touching a terminal. We handle hosting, security, and monitoring so you don't have to." },
+                { q: "Do I need technical knowledge?", a: "No. PocketMolt is designed for non-technical users. Just sign up, add your API keys through our dashboard, and you're live." },
+                { q: "How is my data secured?", a: "AES-256 encryption at rest, TLS 1.3 in transit, mutual TLS authentication, strict firewall rules, and 24/7 monitoring by cybersecurity experts." },
+                { q: "What happens after the waitlist?", a: "Once you're off the waitlist, you'll get immediate access to set up your MoltBot. Initial launch is capped at 1,000 users for quality assurance." },
+                { q: "Can I migrate my existing MoltBot?", a: "Yes. We provide a simple migration path from self-hosted setups. Your configs and data transfer securely." },
+                { q: "What does it cost?", a: "Pricing will be announced closer to launch. Waitlist members get early-bird pricing." },
+              ].map((item, i) => (
+                <FAQItem key={item.q} question={item.q} answer={item.a} delay={i * 0.05} />
+              ))}
+            </div>
+          </div>
+        </section>
+
       </main>
 
       {/* ── Footer CTA ── */}
@@ -900,13 +976,6 @@ export default function Home() {
           >
             <X className="h-4 w-4" />
             X.com
-          </a>
-          <a
-            href="#"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground/70 transition-all duration-200 hover:text-foreground hover:bg-white/[0.03] hover:-translate-y-[1px]"
-          >
-            <Instagram className="h-4 w-4" />
-            Instagram
           </a>
         </motion.div>
       </footer>
