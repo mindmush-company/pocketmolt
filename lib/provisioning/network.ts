@@ -83,7 +83,10 @@ async function getOrCreateFirewall(): Promise<HetznerFirewall> {
   return firewall
 }
 
-export async function attachServerToInfrastructure(serverId: number): Promise<string> {
+export async function attachServerToInfrastructure(
+  serverId: number,
+  options?: { skipFirewall?: boolean }
+): Promise<string> {
   const { network, firewall } = await getOrCreateNetworkInfrastructure()
 
   const { action: attachAction } = await hetzner.networks.attachServer(serverId, {
@@ -92,14 +95,16 @@ export async function attachServerToInfrastructure(serverId: number): Promise<st
   await hetzner.actions.wait(attachAction.id)
   console.log(`Server ${serverId} attached to network ${network.id}`)
 
-  const { actions: firewallActions } = await hetzner.firewalls.applyToServer(
-    firewall.id,
-    serverId
-  )
-  if (firewallActions.length > 0) {
-    await hetzner.actions.wait(firewallActions[0].id)
+  if (!options?.skipFirewall) {
+    const { actions: firewallActions } = await hetzner.firewalls.applyToServer(
+      firewall.id,
+      serverId
+    )
+    if (firewallActions.length > 0) {
+      await hetzner.actions.wait(firewallActions[0].id)
+    }
+    console.log(`Firewall ${firewall.id} applied to server ${serverId}`)
   }
-  console.log(`Firewall ${firewall.id} applied to server ${serverId}`)
 
   const { server } = await hetzner.servers.get(serverId)
   const privateNet = server.private_net.find((pn) => pn.network === network.id)

@@ -217,7 +217,8 @@ export async function provisionServer(
 
     // IMPORTANT: Attach to private network BEFORE waiting for running
     // Servers created without public IP cannot be powered on until they have at least one network interface
-    const privateIp = await attachServerToInfrastructure(server.id)
+    const skipFirewall = !!natGateway
+    const privateIp = await attachServerToInfrastructure(server.id, { skipFirewall })
     console.log(`Server ${server.id} attached to private network at ${privateIp}`)
 
     const runningServer = await hetzner.servers.waitForRunning(server.id, {
