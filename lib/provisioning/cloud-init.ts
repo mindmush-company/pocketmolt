@@ -22,14 +22,14 @@ export function generateCloudInit(botId: string, botName: string): string {
   })
 }
 
+function indentCert(cert: string): string {
+  return cert.split('\n').map(line => '      ' + line).join('\n')
+}
+
 export function generateCloudInitWithCerts(options: CloudInitOptions): string {
   const { botId, botName, privateIp, clientCert, clientKey, caCert } = options
 
   const configApiUrl = `https://${BACKEND_IP}:${CONFIG_API_PORT}`
-
-  const escapedClientCert = clientCert.replace(/\n/g, '\\n')
-  const escapedClientKey = clientKey.replace(/\n/g, '\\n')
-  const escapedCaCert = caCert.replace(/\n/g, '\\n')
 
   return `#cloud-config
 package_update: true
@@ -40,38 +40,22 @@ packages:
   - jq
   - ca-certificates
 
-runcmd:
-  - mkdir -p /opt/pocketmolt/certs
-  - mkdir -p /opt/pocketmolt/bin
-  - mkdir -p /var/log/pocketmolt
-
-  # Install Node.js 22
-  - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-  - apt-get install -y nodejs
-
-  # Install MoltBot
-  - npm install -g moltbot@latest
-
-  # Write certificates
-  - echo -e "${escapedClientCert}" > /opt/pocketmolt/certs/client.crt
-  - echo -e "${escapedClientKey}" > /opt/pocketmolt/certs/client.key
-  - echo -e "${escapedCaCert}" > /opt/pocketmolt/certs/ca.crt
-  - chmod 600 /opt/pocketmolt/certs/client.key
-  - chmod 644 /opt/pocketmolt/certs/client.crt
-  - chmod 644 /opt/pocketmolt/certs/ca.crt
-
-  # Create config directory
-  - mkdir -p ~/.clawdbot
-
-  # Fetch config and start MoltBot
-  - /opt/pocketmolt/bin/fetch-config.sh
-  - systemctl daemon-reload
-  - systemctl enable pocketmolt-bot
-  - systemctl start pocketmolt-bot
-
-  - echo "MoltBot provisioning complete at $(date)" >> /var/log/pocketmolt/init.log
-
 write_files:
+  - path: /opt/pocketmolt/certs/client.crt
+    permissions: '0644'
+    content: |
+${indentCert(clientCert)}
+
+  - path: /opt/pocketmolt/certs/client.key
+    permissions: '0600'
+    content: |
+${indentCert(clientKey)}
+
+  - path: /opt/pocketmolt/certs/ca.crt
+    permissions: '0644'
+    content: |
+${indentCert(caCert)}
+
   - path: /opt/pocketmolt/config.json
     permissions: '0644'
     content: |
@@ -79,8 +63,7 @@ write_files:
         "bot_id": "${botId}",
         "bot_name": "${botName}",
         "private_ip": "${privateIp}",
-        "config_api": "${configApiUrl}",
-        "provisioned_at": "$(date -Iseconds)"
+        "config_api": "${configApiUrl}"
       }
 
   - path: /opt/pocketmolt/bin/fetch-config.sh
@@ -91,7 +74,7 @@ write_files:
       
       CONFIG_API="${configApiUrl}"
       CERT_DIR="/opt/pocketmolt/certs"
-      MOLTBOT_CONFIG="$HOME/.clawdbot/moltbot.json"
+      MOLTBOT_CONFIG="/root/.clawdbot/moltbot.json"
       
       echo "Fetching configuration from $CONFIG_API..."
       
@@ -106,14 +89,13 @@ write_files:
         exit 1
       fi
       
-      # Extract values and build MoltBot config
       ANTHROPIC_KEY=$(echo "$RESPONSE" | jq -r '.apiKeys.anthropic // empty')
       TELEGRAM_TOKEN=$(echo "$RESPONSE" | jq -r '.channels.telegram.botToken // empty')
       MODEL=$(echo "$RESPONSE" | jq -r '.agent.model // "anthropic/claude-sonnet-4-20250514"')
       
       mkdir -p "$(dirname "$MOLTBOT_CONFIG")"
       
-      cat > "$MOLTBOT_CONFIG" << EOF
+      cat > "$MOLTBOT_CONFIG" <<MOLTEOF
       {
         "agent": {
           "model": "$MODEL"
@@ -129,9 +111,8 @@ write_files:
           "port": 18789
         }
       }
-      EOF
+      MOLTEOF
       
-      # Set API key as environment variable for MoltBot
       echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY" > /opt/pocketmolt/env
       chmod 600 /opt/pocketmolt/env
       
@@ -154,7 +135,6 @@ write_files:
       Restart=always
       RestartSec=10
       
-      # Security hardening
       NoNewPrivileges=true
       ProtectSystem=strict
       ProtectHome=read-only
@@ -172,15 +152,28 @@ write_files:
       echo "Bot ID: ${botId}"
       echo "Bot Name: ${botName}"
       echo "Private IP: ${privateIp}"
-      echo "MoltBot Status: $(systemctl is-active pocketmolt-bot)"
-      echo "Uptime: $(uptime -p)"
+      echo "MoltBot Status: \\$(systemctl is-active pocketmolt-bot)"
+      echo "Uptime: \\$(uptime -p)"
       
-      # Check if MoltBot gateway is responding
       if curl -s --connect-timeout 2 "http://${privateIp}:18789/health" > /dev/null 2>&1; then
         echo "Gateway: healthy"
       else
         echo "Gateway: unreachable"
       fi
+
+runcmd:
+  - mkdir -p /opt/pocketmolt/certs
+  - mkdir -p /opt/pocketmolt/bin
+  - mkdir -p /var/log/pocketmolt
+  - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  - apt-get install -y nodejs
+  - npm install -g moltbot@latest
+  - mkdir -p /root/.clawdbot
+  - /opt/pocketmolt/bin/fetch-config.sh || echo "Config fetch failed, will retry on service start"
+  - systemctl daemon-reload
+  - systemctl enable pocketmolt-bot
+  - systemctl start pocketmolt-bot
+  - echo "MoltBot provisioning complete at \\$(date)" >> /var/log/pocketmolt/init.log
 
 final_message: "PocketMolt server provisioned successfully for bot ${botName}"
 `
