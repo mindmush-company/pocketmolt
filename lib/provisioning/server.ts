@@ -26,6 +26,11 @@ export interface ProvisionResult {
   error?: string
 }
 
+function extractSSHKeyWithoutComment(key: string): string {
+  const parts = key.trim().split(/\s+/)
+  return parts.slice(0, 2).join(' ')
+}
+
 async function getOrCreateSSHKey(): Promise<HetznerSSHKey> {
   const existingKey = await hetzner.sshKeys.getByName(SSH_KEY_NAME)
   if (existingKey) {
@@ -38,6 +43,17 @@ async function getOrCreateSSHKey(): Promise<HetznerSSHKey> {
       'HETZNER_SSH_PUBLIC_KEY environment variable is required. ' +
         'Generate with: ssh-keygen -t ed25519 -f pocketmolt-master'
     )
+  }
+
+  const publicKeyWithoutComment = extractSSHKeyWithoutComment(publicKey)
+
+  const { ssh_keys: allKeys } = await hetzner.sshKeys.list()
+  const existingByPublicKey = allKeys.find(
+    (k) => extractSSHKeyWithoutComment(k.public_key) === publicKeyWithoutComment
+  )
+  if (existingByPublicKey) {
+    console.log(`Found existing SSH key "${existingByPublicKey.name}" with matching public key`)
+    return existingByPublicKey
   }
 
   const { ssh_key } = await hetzner.sshKeys.create({
