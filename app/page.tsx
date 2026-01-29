@@ -336,35 +336,65 @@ function TeamCard({
 function IPhoneMockup({ className = "" }: { className?: string }) {
   return (
     <div className={`relative ${className}`}>
-      {/* Outer frame, titanium bezel */}
-      <div className="rounded-[52px] bg-gradient-to-b from-[#2A2A2E] to-[#1C1C1E] p-[3px] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)]">
-        <div className="rounded-[49px] bg-[#1A1A1E] p-[10px]">
-          {/* Screen */}
-          <div className="relative flex aspect-[9/19.5] flex-col items-center overflow-hidden rounded-[40px] bg-[#0A0A0C]">
-            {/* Dynamic Island */}
-            <div className="mt-3 h-[28px] w-[100px] rounded-full bg-black" />
+      {/* Ambient glow behind phone */}
+      <div className="pointer-events-none absolute -inset-12 rounded-full bg-[#A855F7]/[0.06] blur-[80px]" />
 
-            {/* Status bar */}
-            <div className="mt-2 flex w-full items-center justify-between px-8">
-              <p className="text-[12px] font-semibold text-white/50">9:41</p>
-              <div className="flex items-center gap-1">
-                <div className="h-[10px] w-[10px] rounded-full border border-white/30" />
-                <div className="flex gap-[2px]">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className={`h-[10px] w-[3px] rounded-full ${i <= 3 ? "bg-white/50" : "bg-white/20"}`} />
-                  ))}
+      {/* Outer titanium bezel — multi-layer for realism */}
+      <div className="relative rounded-[56px] bg-gradient-to-b from-[#3A3A3F] via-[#2A2A2E] to-[#1A1A1E] p-[2.5px] [box-shadow:0_40px_80px_-20px_rgba(0,0,0,0.7),0_20px_40px_-10px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.08),inset_0_1px_0_rgba(255,255,255,0.12)]">
+        {/* Inner bezel ring */}
+        <div className="rounded-[53.5px] bg-gradient-to-b from-[#222225] to-[#161618] p-[2px]">
+          <div className="rounded-[51.5px] bg-[#1A1A1E] p-[9px]">
+            {/* Screen */}
+            <div className="relative flex aspect-[9/19.5] flex-col items-center overflow-hidden rounded-[43px] bg-[#050507]">
+              {/* Subtle screen edge highlight */}
+              <div className="pointer-events-none absolute inset-0 rounded-[43px] ring-1 ring-inset ring-white/[0.04]" />
+
+              {/* Dynamic Island */}
+              <div className="relative mt-3 h-[30px] w-[110px] rounded-full bg-black [box-shadow:inset_0_0_4px_rgba(0,0,0,0.8),0_0_0_0.5px_rgba(255,255,255,0.04)]">
+                {/* Camera lens dot */}
+                <div className="absolute right-[22px] top-1/2 h-[8px] w-[8px] -translate-y-1/2 rounded-full bg-[#0D0D10] ring-1 ring-[#1a1a20]">
+                  <div className="absolute inset-[2px] rounded-full bg-[#1a1a2a] [box-shadow:inset_0_0_2px_rgba(100,100,255,0.15)]" />
                 </div>
               </div>
+
+              {/* Status bar */}
+              <div className="mt-1.5 flex w-full items-center justify-between px-8">
+                <p className="text-[12px] font-semibold text-white/60">9:41</p>
+                <div className="flex items-center gap-1.5">
+                  {/* Signal bars */}
+                  <div className="flex items-end gap-[2px]">
+                    {[5, 7, 9, 11].map((h, i) => (
+                      <div key={i} className={`w-[3px] rounded-full ${i <= 2 ? "bg-white/60" : "bg-white/20"}`} style={{ height: `${h}px` }} />
+                    ))}
+                  </div>
+                  {/* Wi-Fi */}
+                  <svg className="h-[12px] w-[12px] text-white/60" viewBox="0 0 24 24" fill="currentColor"><path d="M12 18c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-4.24-4.24l1.41 1.41C10.07 14.27 10.97 14 12 14s1.93.27 2.83.17l1.41-1.41C14.9 11.59 13.51 11 12 11s-2.9.59-4.24 1.76zM2.81 8.81l1.41 1.41C6.36 8.08 9.05 7 12 7s5.64 1.08 7.78 3.22l1.41-1.41C18.68 6.3 15.53 5 12 5S5.32 6.3 2.81 8.81z"/></svg>
+                  {/* Battery */}
+                  <div className="flex items-center gap-[2px]">
+                    <div className="h-[11px] w-[20px] rounded-[3px] border border-white/30 p-[1.5px]">
+                      <div className="h-full w-[70%] rounded-[1.5px] bg-white/60" />
+                    </div>
+                    <div className="h-[5px] w-[1.5px] rounded-r-full bg-white/30" />
+                  </div>
+                </div>
+              </div>
+
+              {/* App content */}
+              <PhoneWaitlistUI />
+
+              {/* Home indicator */}
+              <div className="mb-2 h-[5px] w-[134px] rounded-full bg-white/25" />
             </div>
-
-            {/* App content */}
-            <PhoneWaitlistUI />
-
-            {/* Home indicator */}
-            <div className="mb-2 h-[5px] w-[120px] rounded-full bg-white/20" />
           </div>
         </div>
       </div>
+
+      {/* Side buttons — left */}
+      <div className="absolute left-[-2px] top-[120px] h-[28px] w-[3px] rounded-l-full bg-gradient-to-b from-[#3A3A3F] to-[#2A2A2E] [box-shadow:-1px_0_2px_rgba(0,0,0,0.3)]" />
+      <div className="absolute left-[-2px] top-[165px] h-[52px] w-[3px] rounded-l-full bg-gradient-to-b from-[#3A3A3F] to-[#2A2A2E] [box-shadow:-1px_0_2px_rgba(0,0,0,0.3)]" />
+      <div className="absolute left-[-2px] top-[225px] h-[52px] w-[3px] rounded-l-full bg-gradient-to-b from-[#3A3A3F] to-[#2A2A2E] [box-shadow:-1px_0_2px_rgba(0,0,0,0.3)]" />
+      {/* Side button — right (power) */}
+      <div className="absolute right-[-2px] top-[180px] h-[68px] w-[3px] rounded-r-full bg-gradient-to-b from-[#3A3A3F] to-[#2A2A2E] [box-shadow:1px_0_2px_rgba(0,0,0,0.3)]" />
     </div>
   )
 }
@@ -407,42 +437,66 @@ function PhoneWaitlistUI() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center px-4 pt-4 pb-2">
+    <div className="flex flex-1 flex-col items-center px-5 pt-6 pb-2">
       {/* App icon + branding */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10">
-          <Terminal className="h-6 w-6 text-primary" />
+      <div className="flex flex-1 flex-col items-center justify-center gap-5">
+        {/* Premium app icon with layered glow */}
+        <div className="relative">
+          <div className="absolute -inset-3 rounded-3xl bg-[#A855F7]/10 blur-xl" />
+          <div className="relative flex h-16 w-16 items-center justify-center rounded-[18px] bg-gradient-to-br from-[#A855F7] via-[#9333EA] to-[#7C3AED] [box-shadow:0_4px_16px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
+            <Terminal className="h-7 w-7 text-white" />
+          </div>
         </div>
-        <p className="text-[15px] font-semibold text-white">PocketMolt</p>
-        <p className="max-w-[170px] text-center text-[12px] leading-snug text-white/40">
-          Deploy your MoltBot in minutes
-        </p>
+        <div className="flex flex-col items-center gap-1.5">
+          <p className="font-display text-[17px] font-bold tracking-tight text-white">PocketMolt</p>
+          <p className="max-w-[180px] text-center text-[12px] leading-snug text-white/35">
+            Deploy your MoltBot in minutes
+          </p>
+        </div>
+
+        {/* Trust indicators */}
+        <div className="flex items-center gap-3 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 py-1.5">
+          <div className="flex items-center gap-1.5">
+            <div className="h-[6px] w-[6px] rounded-full bg-emerald-400 [box-shadow:0_0_6px_rgba(52,211,153,0.5)]" />
+            <span className="text-[10px] font-medium text-white/40">Encrypted</span>
+          </div>
+          <div className="h-3 w-px bg-white/[0.08]" />
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="h-[10px] w-[10px] text-white/30" />
+            <span className="text-[10px] font-medium text-white/40">Secured</span>
+          </div>
+        </div>
       </div>
 
       {/* Email input + button */}
-      <div className="w-full space-y-2.5 pb-6">
+      <div className="w-full space-y-3 pb-5">
         {status === "success" ? (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <CheckCircle className="h-6 w-6 text-[#A855F7]" />
-            <p className="text-[13px] font-medium text-white/80">You&apos;re on the list!</p>
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#A855F7]/10 bg-[#A855F7]/[0.04] py-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#A855F7]/10">
+              <CheckCircle className="h-5 w-5 text-[#A855F7]" />
+            </div>
+            <p className="text-[14px] font-semibold text-white/90">You&apos;re on the list!</p>
+            <p className="text-[11px] text-white/35">We&apos;ll be in touch soon</p>
           </div>
         ) : (
           <>
-            <input
-              type="email"
-              placeholder="you@email.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                if (status === "error" || status === "rate-limited") setStatus("idle")
-              }}
-              onFocus={(e) => {
-                setTimeout(() => {
-                  e.target.scrollIntoView({ behavior: "smooth", block: "center" })
-                }, 300)
-              }}
-              className="w-full rounded-xl border border-white/[0.06] bg-white/[0.05] px-4 py-3 text-[14px] text-white placeholder:text-white/30 outline-none focus:border-primary/40 shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-all"
-            />
+            <div className="relative">
+              <input
+                type="email"
+                placeholder="you@email.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (status === "error" || status === "rate-limited") setStatus("idle")
+                }}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: "smooth", block: "center" })
+                  }, 300)
+                }}
+                className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3.5 text-[14px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
+              />
+            </div>
             {/* Honeypot — hidden from humans, bots fill it */}
             <input
               type="text"
@@ -457,22 +511,22 @@ function PhoneWaitlistUI() {
             <button
               onClick={handleSubmit}
               disabled={status === "loading" || !consent}
-              className="w-full rounded-xl border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(220,218,214,0.9)_50%,rgba(180,178,174,0.85)_100%)] py-3 text-[14px] font-semibold text-[#111] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.25),0_8px_20px_rgba(0,0,0,0.15)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.3),0_12px_28px_rgba(0,0,0,0.2)]"
+              className="w-full rounded-2xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-3.5 text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-40 [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
             {/* GDPR consent */}
-            <label className="flex items-start gap-2 cursor-pointer pt-1">
+            <label className="flex items-start gap-2.5 cursor-pointer pt-0.5">
               <input
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-white/20 bg-white/5 accent-primary"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
               />
-              <span className="text-[11px] leading-snug text-white/35">
+              <span className="text-[10px] leading-snug text-white/30">
                 I agree to the{" "}
-                <a href="/terms" target="_blank" className="underline hover:text-white/50">Terms of Service</a>{" "}
-                and to receive updates about PocketMolt. No spam, unsubscribe anytime.
+                <a href="/terms" target="_blank" className="underline hover:text-white/45">Terms of Service</a>{" "}
+                and to receive updates. No spam, unsubscribe anytime.
               </span>
             </label>
           </>
@@ -480,8 +534,8 @@ function PhoneWaitlistUI() {
         {(status === "error" || status === "rate-limited") && (
           <p className="text-center text-[11px] text-red-400">{errorMsg}</p>
         )}
-        <p className="text-center text-[11px] text-white/25">
-          1,000 spots, first come, first serve
+        <p className="text-center text-[10px] tracking-wide text-white/20">
+          1,000 spots &middot; first come, first serve
         </p>
       </div>
     </div>
