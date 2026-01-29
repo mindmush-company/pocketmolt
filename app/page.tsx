@@ -469,7 +469,7 @@ export default function Home() {
           </a>
           <div className="flex items-center gap-1 md:gap-2">
             <nav className="flex items-center">
-              {["How It Works", "Security", "Team"].map((item) => (
+              {["Demo", "Security", "Team"].map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
@@ -526,7 +526,7 @@ export default function Home() {
                   >
                     Easily & Safely
                     <br />
-                    Set Up <span className="text-primary">MoltBot</span>
+                    Set Up <span className="text-foreground">MoltBot</span>
                   </motion.h1>
 
                   <motion.p
@@ -556,10 +556,10 @@ export default function Home() {
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                     <a
-                      href="#how-it-works"
+                      href="#demo"
                       className="inline-flex h-13 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-8 text-[15px] font-medium text-foreground transition-all duration-200 hover:-translate-y-[1px] hover:border-white/[0.12] hover:bg-white/[0.05]"
                     >
-                      See how it works
+                      Watch the demo
                       <ArrowUpRight className="h-4 w-4" />
                     </a>
                   </motion.div>
@@ -647,21 +647,54 @@ export default function Home() {
         </section>
 
 
-        {/* ── How It Works ── */}
-        <section id="how-it-works" className="w-full py-24 md:py-32">
-          <div className="container mx-auto px-4 md:px-6">
+        {/* ── VSL Video ── */}
+        <section id="demo" className="relative w-full py-24 md:py-32">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/4 blur-[180px]" />
+          </div>
+
+          <div className="container relative mx-auto px-4 md:px-6">
             <Reveal>
-              <div className="mb-20 max-w-2xl">
-                <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
-                  How it works
+              <div className="mb-12 max-w-2xl mx-auto text-center">
+                <h2 className="font-display text-3xl font-bold text-foreground sm:text-4xl md:text-5xl">
+                  See it in action
                 </h2>
-                <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                  Three steps. Zero technical knowledge required.
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                  Watch how PocketMolt takes you from zero to a fully secured MoltBot.
                 </p>
               </div>
             </Reveal>
 
-            <HorizontalTimeline />
+            <motion.div
+              className="mx-auto max-w-4xl"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <div className="relative overflow-hidden rounded-[20px] border border-white/[0.08] bg-white/[0.03] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06),0_4px_12px_rgba(0,0,0,0.4),0_24px_48px_rgba(0,0,0,0.2)]">
+                {/* 16:9 aspect ratio container */}
+                <div className="relative aspect-video w-full bg-black/40">
+                  {/* Placeholder — replace src with your actual video URL */}
+                  <iframe
+                    className="absolute inset-0 h-full w-full"
+                    src=""
+                    title="PocketMolt Demo"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                  {/* Fallback overlay shown when no video src is set */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.05] backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/[0.08]">
+                      <svg className="ml-1 h-6 w-6 text-foreground/70" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <span className="text-[13px] text-muted-foreground">Video coming soon</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 
@@ -677,7 +710,7 @@ export default function Home() {
               <div className="mb-16 max-w-3xl">
                 <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
                   Self-hosting MoltBot is{" "}
-                  <span className="text-[#3B82F6]">dangerous</span>
+                  <span className="text-foreground">dangerous</span>
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   Without proper security, your bot is an open door for hackers.
@@ -836,7 +869,7 @@ export default function Home() {
             <Reveal>
               <div className="mb-20 max-w-2xl">
                 <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
-                  Built like a <span className="text-[#3B82F6]">fortress</span>
+                  Built like a <span className="text-foreground">fortress</span>
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   Every component of PocketMolt is designed with security as the
