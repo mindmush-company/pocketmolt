@@ -47,12 +47,10 @@ export function generateCloudInitWithCerts(options: CloudInitOptions): string {
   const natRoutingCommands = natGatewayIp ? `
   - systemctl restart systemd-resolved
   - |
-    # Find the private network interface (has 10.x.x.x IP)
     IFACE=$(ip -o addr show | grep 'inet 10\\.' | awk '{print $2}' | head -1)
     if [ -n "$IFACE" ]; then
       echo "Found private interface: $IFACE"
-      # Add default route via NAT gateway
-      ip route add default via ${natGatewayIp} dev $IFACE metric 100 || echo "Default route exists"
+      ip route add default via 10.0.0.1 dev $IFACE || echo "Default route exists"
     else
       echo "No private interface found yet"
     fi
@@ -128,7 +126,7 @@ ${indentCert(caCert)}
       mkdir -p "$(dirname "$MOLTBOT_CONFIG")"
       
       if [ -n "$PROXY_BASE_URL" ] && [ -n "$PROXY_API_KEY" ]; then
-        # Use LiteLLM proxy
+        # Use LiteLLM proxy - set via environment variable
         cat > "$MOLTBOT_CONFIG" <<MOLTEOF
       {
         "agents": {
@@ -155,15 +153,11 @@ ${indentCert(caCert)}
             "allowInsecureAuth": true
           },
           "trustedProxies": ["${BACKEND_IP}"]
-        },
-        "providers": {
-          "anthropic": {
-            "baseUrl": "$PROXY_BASE_URL"
-          }
         }
       }
       MOLTEOF
         echo "ANTHROPIC_API_KEY=$PROXY_API_KEY" > /opt/pocketmolt/env
+        echo "ANTHROPIC_BASE_URL=$PROXY_BASE_URL" >> /opt/pocketmolt/env
       else
         # Use direct Anthropic API key
         cat > "$MOLTBOT_CONFIG" <<MOLTEOF
