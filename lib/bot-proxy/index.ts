@@ -83,18 +83,15 @@ export function rewriteHtmlForProxy(
 
   const injectionScript = `
 <script>
-  window.__POCKETMOLT_CONFIG__ = {
-    gatewayToken: "${gatewayToken}",
-    wsUrl: "/ws/bots/${botId}/"
-  };
   window.__CLAWDBOT_CONTROL_UI_BASE_PATH__ = "";
   
   (function() {
     var OriginalWebSocket = window.WebSocket;
+    var gatewayToken = "${gatewayToken}";
     window.WebSocket = function(url, protocols) {
       if (url.includes(':18789') || url.match(/^wss?:\\/\\/[^/]+\\/?$/)) {
         var proxyUrl = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        url = proxyUrl + '//' + window.location.host + '/ws/bots/${botId}/';
+        url = proxyUrl + '//' + window.location.host + '/ws/bots/${botId}/?token=' + encodeURIComponent(gatewayToken);
       }
       return new OriginalWebSocket(url, protocols);
     };
