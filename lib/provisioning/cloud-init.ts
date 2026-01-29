@@ -39,7 +39,7 @@ export function generateCloudInitWithCerts(options: CloudInitOptions): string {
     permissions: '0644'
     content: |
       [Match]
-      Name=ens10
+      Name=enp* ens10
       
       [Network]
       DHCP=yes
@@ -65,16 +65,22 @@ export function generateCloudInitWithCerts(options: CloudInitOptions): string {
   const natRoutingCommands = natGatewayIp ? `
   - |
     echo "Waiting for private network interface..."
+    IFACE=""
     for i in $(seq 1 60); do
-      if ip link show ens10 2>/dev/null | grep -q UP; then
-        echo "Private network up after \${i}s"
-        break
-      fi
+      for dev in enp7s0 enp8s0 ens10; do
+        if ip link show $dev 2>/dev/null | grep -q UP; then
+          IFACE=$dev
+          echo "Private network $IFACE up after \${i}s"
+          break 2
+        fi
+      done
       sleep 1
     done
   - systemctl restart systemd-networkd
   - systemctl restart systemd-resolved
-  - ip route replace default via ${natGatewayIp} dev ens10 || echo "Route already set"
+  - |
+    IFACE=$(ip -o link show | grep -E 'enp|ens10' | grep -v lo | head -1 | awk -F: '{print $2}' | tr -d ' ')
+    ip route replace default via ${natGatewayIp} dev $IFACE || echo "Route already set"
 ` : ''
 
   return `#cloud-config
