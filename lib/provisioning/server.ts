@@ -180,6 +180,10 @@ export async function provisionServer(
     const sshKey = await getOrCreateSSHKey()
     console.log(`Using SSH key: ${sshKey.name} (${sshKey.id})`)
 
+    // Get network infrastructure BEFORE creating server so we can attach during creation
+    const { network } = await getOrCreateNetworkInfrastructure()
+    console.log(`Using network: ${network.name} (${network.id})`)
+
     const cloudInit = generateCloudInitWithCerts({
       botId,
       botName,
@@ -207,6 +211,8 @@ export async function provisionServer(
       start_after_create: true,
       // Skip public IP when using NAT gateway
       public_net: natGateway ? { enable_ipv4: false, enable_ipv6: false } : undefined,
+      // Attach to private network at creation time so server boots with network
+      networks: [network.id],
     })
 
     createdServerId = server.id
@@ -215,18 +221,14 @@ export async function provisionServer(
     await hetzner.actions.wait(action.id, { timeoutMs: 5 * 60 * 1000 })
     console.log(`Server creation action completed`)
 
-    // IMPORTANT: Attach to private network BEFORE waiting for running
-    // Servers created without public IP cannot be powered on until they have at least one network interface
-    const skipFirewall = !!natGateway
-    const privateIp = await attachServerToInfrastructure(server.id, { skipFirewall })
-    console.log(`Server ${server.id} attached to private network at ${privateIp}`)
-
     const runningServer = await hetzner.servers.waitForRunning(server.id, {
       timeoutMs: 5 * 60 * 1000,
     })
 
     const serverIp = runningServer.public_net.ipv4?.ip
-    console.log(`Server ${server.id} is running at ${serverIp || 'no public IP'}`)
+    const privateNet = runningServer.private_net.find((pn) => pn.network === network.id)
+    const privateIp = privateNet?.ip || ''
+    console.log(`Server ${server.id} is running at ${serverIp || 'no public IP'}, private: ${privateIp}`)
 
     if (natGateway) {
       await incrementBotCount(natGateway.id)
