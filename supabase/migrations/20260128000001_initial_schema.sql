@@ -1,7 +1,4 @@
 -- SQL migration for initial schema with RLS and encryption
--- Enable extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Profiles table (extends auth.users)
 CREATE TABLE profiles (
@@ -18,7 +15,7 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 
 -- Bots table
 CREATE TABLE bots (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('starting', 'running', 'stopped', 'failed')),
@@ -38,7 +35,7 @@ CREATE POLICY "Users can delete own bots" ON bots FOR DELETE USING (auth.uid()::
 
 -- Subscriptions table
 CREATE TABLE subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   bot_id UUID NOT NULL REFERENCES bots(id) ON DELETE CASCADE,
   stripe_subscription_id TEXT NOT NULL UNIQUE,

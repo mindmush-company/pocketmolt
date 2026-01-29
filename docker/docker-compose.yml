@@ -1,0 +1,47 @@
+services:
+  nextjs:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.nextjs
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - ../.env.production
+    restart: unless-stopped
+    networks:
+      - pocketmolt
+
+  config-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.config-api
+    ports:
+      - "8443:8443"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_API_PORT=8443
+    env_file:
+      - ../.env.production
+    restart: unless-stopped
+    networks:
+      - pocketmolt
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - nextjs
+    restart: unless-stopped
+    networks:
+      - pocketmolt
+
+networks:
+  pocketmolt:
+    driver: bridge
