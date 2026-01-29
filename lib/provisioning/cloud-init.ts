@@ -100,18 +100,30 @@ ${indentCert(caCert)}
       
       cat > "$MOLTBOT_CONFIG" <<MOLTEOF
       {
-        "agent": {
-          "model": "$MODEL"
+        "agents": {
+          "defaults": {
+            "model": {
+              "primary": "$MODEL"
+            }
+          }
         },
         "channels": {
           "telegram": {
             "enabled": true,
-            "token": "$TELEGRAM_TOKEN"
+            "botToken": "$TELEGRAM_TOKEN"
           }
         },
         "gateway": {
-          "host": "${privateIp}",
-          "port": 18789
+          "mode": "local",
+          "bind": "lan",
+          "port": 18789,
+          "auth": {
+            "mode": "token"
+          },
+          "controlUi": {
+            "allowInsecureAuth": true
+          },
+          "trustedProxies": ["${BACKEND_IP}"]
         }
       }
       MOLTEOF
@@ -133,16 +145,17 @@ ${indentCert(caCert)}
       Type=simple
       User=root
       WorkingDirectory=/opt/pocketmolt
+      Environment=CLAWDBOT_CONFIG_PATH=/root/.clawdbot/moltbot.json
       EnvironmentFile=/opt/pocketmolt/env
       ExecStartPre=/opt/pocketmolt/bin/fetch-config.sh
-      ExecStart=/bin/sh -c '/usr/bin/clawdbot gateway --allow-unconfigured --bind lan --token $CLAWDBOT_GATEWAY_TOKEN'
+      ExecStart=/usr/bin/clawdbot gateway --allow-unconfigured
       Restart=always
       RestartSec=10
       
       NoNewPrivileges=true
       ProtectSystem=strict
       ProtectHome=read-only
-      ReadWritePaths=/opt/pocketmolt /root/.clawdbot /var/log/pocketmolt
+      ReadWritePaths=/opt/pocketmolt /root/.clawdbot /root/clawd /var/log/pocketmolt /tmp
       PrivateTmp=true
       
       [Install]
@@ -170,6 +183,7 @@ runcmd:
   - mkdir -p /opt/pocketmolt/certs
   - mkdir -p /opt/pocketmolt/bin
   - mkdir -p /var/log/pocketmolt
+  - mkdir -p /root/clawd
   - curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
   - apt-get install -y nodejs
   - npm install -g clawdbot@latest

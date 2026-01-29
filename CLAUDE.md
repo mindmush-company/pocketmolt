@@ -514,6 +514,126 @@ cd docker && docker compose build nextjs config-api
 docker compose up -d && docker compose restart nginx
 ```
 
+## Clawdbot/MoltBot Configuration (CRITICAL)
+
+The bot servers run Clawdbot (the CLI for MoltBot). Configuration is stored in `~/.clawdbot/moltbot.json`.
+
+### Config File Location
+
+- **Default**: `~/.clawdbot/moltbot.json` (or `~/.clawdbot/clawdbot.json`)
+- **Override via env**: `CLAWDBOT_CONFIG_PATH=/path/to/config.json`
+- The systemd service MUST set `Environment=CLAWDBOT_CONFIG_PATH=/root/.clawdbot/moltbot.json`
+
+### Correct Configuration Format (2026.1.x+)
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-20250514"
+      }
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "botToken": "123456:ABC..."
+    }
+  },
+  "gateway": {
+    "mode": "local",
+    "bind": "lan",
+    "port": 18789,
+    "auth": {
+      "mode": "token"
+    },
+    "controlUi": {
+      "allowInsecureAuth": true
+    },
+    "trustedProxies": ["10.0.0.2"]
+  }
+}
+```
+
+### DEPRECATED/INVALID Config Keys (DO NOT USE)
+
+| Invalid Key | Correct Key | Notes |
+|-------------|-------------|-------|
+| `agent` | `agents.defaults` | Migrated in 2026.1.x |
+| `agent.model` (string) | `agents.defaults.model.primary` | Now an object |
+| `channels.telegram.token` | `channels.telegram.botToken` | Key name changed |
+| `gateway.host` | (removed) | Not a valid key |
+| `gateway.controlUi.dangerouslyDisableDeviceAuth` | `gateway.controlUi.allowInsecureAuth` | Different key! |
+
+### Gateway Configuration Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `gateway.mode` | `"local"` | Required. Must be set for gateway to start |
+| `gateway.bind` | `"loopback" \| "lan" \| "tailnet"` | Network binding mode |
+| `gateway.port` | number | Default: 18789 |
+| `gateway.auth.mode` | `"token" \| "password"` | Auth mode for connections |
+| `gateway.controlUi.allowInsecureAuth` | boolean | Allow token-only auth (no device pairing) |
+| `gateway.trustedProxies` | string[] | IPs/CIDRs trusted for X-Forwarded-For |
+
+### Trusted Proxies
+
+When running behind a reverse proxy (like our nginx on 10.0.0.2), you MUST configure `gateway.trustedProxies`:
+
+```json
+{
+  "gateway": {
+    "trustedProxies": ["10.0.0.2"]
+  }
+}
+```
+
+**Without this**: Gateway logs "Proxy headers detected from untrusted address" and rejects WebSocket connections with "pairing required".
+
+**CIDR support**: You can use CIDR notation like `["10.0.0.0/8"]` for broader ranges.
+
+### Control UI Embedding
+
+To embed the Clawdbot Control UI in an iframe behind a proxy:
+
+1. Set `gateway.controlUi.allowInsecureAuth: true` (allows token auth without device pairing)
+2. Set `gateway.trustedProxies` to include your proxy IP
+3. Pass the gateway token via localStorage key `clawdbot.control.settings.v1`
+
+**Note**: `dangerouslyDisableDeviceAuth` is documented but NOT a valid config key as of 2026.1.x. Use `allowInsecureAuth` instead.
+
+### Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `CLAWDBOT_CONFIG_PATH` | Override config file location |
+| `CLAWDBOT_GATEWAY_TOKEN` | Gateway authentication token |
+| `ANTHROPIC_API_KEY` | API key for Anthropic models |
+
+### Validating Configuration
+
+```bash
+# Check for config errors
+CLAWDBOT_CONFIG_PATH=/root/.clawdbot/moltbot.json clawdbot doctor
+
+# Fix legacy migrations
+CLAWDBOT_CONFIG_PATH=/root/.clawdbot/moltbot.json clawdbot doctor --fix
+
+# Get specific config value
+CLAWDBOT_CONFIG_PATH=/root/.clawdbot/moltbot.json clawdbot config get gateway.trustedProxies
+```
+
+### Debugging Connection Issues
+
+If WebSocket connections fail with "pairing required":
+
+1. Check logs: `journalctl -u pocketmolt-bot -f`
+2. Look for: "Proxy headers detected from untrusted address"
+3. Verify `trustedProxies` includes your proxy IP
+4. Verify `allowInsecureAuth: true` is set
+5. Run `clawdbot doctor` to check for config errors
+
 ## Gotchas
 
 1. **Next.js 15+ async cookies**: `await cookies()` - returns Promise now
@@ -523,6 +643,10 @@ docker compose up -d && docker compose restart nginx
 5. **OAuth callback**: Requires Supabase dashboard configuration for each provider
 6. **Clawdbot startup delay**: Gateway takes ~55 seconds to start - health checks will fail during this window
 7. **fetch-config.sh overwrites env**: Must append gateway token after writing API key, not just write API key
+8. **Clawdbot config format**: Use `agents.defaults` not `agent`, use `botToken` not `token` for Telegram
+9. **trustedProxies required**: Without this, proxied WebSocket connections get "pairing required" error
+10. **CLAWDBOT_CONFIG_PATH**: Systemd service must set this env var to find the config file
+11. **Workspace directory**: Clawdbot needs `/root/clawd` writable - add to `ReadWritePaths` in systemd service
 
 ## For AI Assistants
 
