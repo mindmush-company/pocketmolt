@@ -94,6 +94,7 @@ ${indentCert(caCert)}
       ANTHROPIC_KEY=$(echo "$RESPONSE" | jq -r '.apiKeys.anthropic // empty')
       TELEGRAM_TOKEN=$(echo "$RESPONSE" | jq -r '.channels.telegram.botToken // empty')
       MODEL=$(echo "$RESPONSE" | jq -r '.agent.model // "anthropic/claude-sonnet-4-20250514"')
+      GATEWAY_TOKEN=$(echo "$RESPONSE" | jq -r '.gatewayToken // empty')
       
       mkdir -p "$(dirname "$MOLTBOT_CONFIG")"
       
@@ -116,7 +117,7 @@ ${indentCert(caCert)}
       MOLTEOF
       
       echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY" > /opt/pocketmolt/env
-      echo "CLAWDBOT_GATEWAY_TOKEN=${gatewayToken}" >> /opt/pocketmolt/env
+      echo "CLAWDBOT_GATEWAY_TOKEN=$GATEWAY_TOKEN" >> /opt/pocketmolt/env
       chmod 600 /opt/pocketmolt/env
       
       echo "Configuration written to $MOLTBOT_CONFIG"
@@ -134,7 +135,7 @@ ${indentCert(caCert)}
       WorkingDirectory=/opt/pocketmolt
       EnvironmentFile=/opt/pocketmolt/env
       ExecStartPre=/opt/pocketmolt/bin/fetch-config.sh
-      ExecStart=/usr/bin/clawdbot gateway --allow-unconfigured --bind lan --token ${gatewayToken}
+      ExecStart=/bin/sh -c '/usr/bin/clawdbot gateway --allow-unconfigured --bind lan --token $CLAWDBOT_GATEWAY_TOKEN'
       Restart=always
       RestartSec=10
       

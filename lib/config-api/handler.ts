@@ -16,6 +16,7 @@ interface MoltBotConfig {
     anthropic?: string
     openai?: string | null
   }
+  gatewayToken?: string
 }
 
 export async function handleConfigRequest(
@@ -41,7 +42,7 @@ export async function handleConfigRequest(
     const supabase = createAdminClient() as any
     const { data: bot, error } = await supabase
       .from('bots')
-      .select('id, encrypted_api_key, telegram_bot_token_encrypted, private_ip')
+      .select('id, encrypted_api_key, telegram_bot_token_encrypted, private_ip, gateway_token_encrypted')
       .eq('id', botId)
       .single()
 
@@ -72,6 +73,10 @@ export async function handleConfigRequest(
       config.channels.telegram = {
         botToken: decrypt(bot.telegram_bot_token_encrypted),
       }
+    }
+
+    if (bot.gateway_token_encrypted) {
+      config.gatewayToken = decrypt(bot.gateway_token_encrypted)
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' })
