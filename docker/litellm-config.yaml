@@ -18,10 +18,7 @@ general_settings:
   store_model_in_db: true
 
 litellm_settings:
-  success_callback: ["webhook"]
-  failure_callback: ["webhook"]
-  callbacks:
-    - webhook
-  webhook_url: "http://127.0.0.1:3000/api/webhooks/litellm"
+  success_callback: ["generic_api"]
+  failure_callback: ["generic_api"]
   drop_params: true
   set_verbose: false

@@ -33,6 +33,10 @@ export async function createBotKey(botId: string, userId: string): Promise<strin
       metadata: {
         bot_id: botId,
         user_id: userId,
+        spend_logs_metadata: {
+          bot_id: botId,
+          user_id: userId,
+        },
       },
       models: ['claude-sonnet-4', 'claude-sonnet-4-20250514', 'anthropic/claude-sonnet-4-20250514'],
       max_budget: null,

@@ -31,6 +31,7 @@ services:
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
       - DATABASE_URL=postgresql://litellm:${LITELLM_DB_PASSWORD}@127.0.0.1:5433/litellm
       - ANTHROPIC_API_KEY=${DEFAULT_ANTHROPIC_API_KEY}
+      - GENERIC_LOGGER_ENDPOINT=http://127.0.0.1:3000/api/webhooks/litellm
       - LITELLM_LOG=DEBUG
     volumes:
       - ./litellm-config.yaml:/app/config.yaml:ro
