@@ -86,18 +86,40 @@ export function rewriteHtmlForProxy(
   window.__CLAWDBOT_CONTROL_UI_BASE_PATH__ = "";
   
   (function() {
-    // Inject gateway token into localStorage (where Control UI reads it from)
     var gatewayToken = "${gatewayToken}";
-    if (gatewayToken) {
-      localStorage.setItem('clawdbot-control-ui:token', gatewayToken);
-    }
+    var wsUrl = (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host + '/ws/bots/${botId}/';
     
-    // Rewrite WebSocket URLs to go through our proxy
+    // Inject settings into localStorage with correct key and structure
+    var settingsKey = "clawdbot.control.settings.v1";
+    var existingSettings = {};
+    try {
+      var stored = localStorage.getItem(settingsKey);
+      if (stored) existingSettings = JSON.parse(stored);
+    } catch(e) {}
+    
+    var newSettings = Object.assign({}, {
+      gatewayUrl: wsUrl,
+      token: "",
+      sessionKey: "main",
+      lastActiveSessionKey: "main",
+      theme: "system",
+      chatFocusMode: false,
+      chatShowThinking: true,
+      splitRatio: 0.6,
+      navCollapsed: false,
+      navGroupsCollapsed: {}
+    }, existingSettings, {
+      gatewayUrl: wsUrl,
+      token: gatewayToken
+    });
+    
+    localStorage.setItem(settingsKey, JSON.stringify(newSettings));
+    
+    // Also rewrite WebSocket URLs to go through our proxy
     var OriginalWebSocket = window.WebSocket;
     window.WebSocket = function(url, protocols) {
       if (url.includes(':18789') || url.match(/^wss?:\\/\\/[^/]+\\/?$/)) {
-        var proxyUrl = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        url = proxyUrl + '//' + window.location.host + '/ws/bots/${botId}/';
+        url = wsUrl;
       }
       return new OriginalWebSocket(url, protocols);
     };
