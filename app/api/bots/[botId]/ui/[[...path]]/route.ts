@@ -51,14 +51,16 @@ export async function GET(
   }
 
   try {
-    const result = await proxyToBot(bot.private_ip, proxyPath)
+    const gatewayToken = bot.gateway_token_encrypted
+      ? decrypt(bot.gateway_token_encrypted)
+      : ''
+
+    // Fetch HTML with token in query string so Control UI reads it
+    const fetchPath = proxyPath === '/' ? `/?token=${encodeURIComponent(gatewayToken)}` : proxyPath
+    const result = await proxyToBot(bot.private_ip, fetchPath)
 
     const contentType = result.headers['content-type'] || ''
     if (contentType.includes('text/html') || proxyPath === '/') {
-      const gatewayToken = bot.gateway_token_encrypted
-        ? decrypt(bot.gateway_token_encrypted)
-        : ''
-
       const modifiedHtml = rewriteHtmlForProxy(
         result.body.toString('utf-8'),
         botId,
