@@ -8,6 +8,8 @@ services:
       - NODE_ENV=production
     env_file:
       - ../.env.production
+    depends_on:
+      - litellm-db
     restart: unless-stopped
 
   config-api:
@@ -22,6 +24,33 @@ services:
       - ../.env.production
     restart: unless-stopped
 
+  litellm-proxy:
+    image: ghcr.io/berriai/litellm:main-latest
+    network_mode: host
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - DATABASE_URL=postgresql://litellm:${LITELLM_DB_PASSWORD}@127.0.0.1:5433/litellm
+      - ANTHROPIC_API_KEY=${DEFAULT_ANTHROPIC_API_KEY}
+      - LITELLM_LOG=DEBUG
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    depends_on:
+      - litellm-db
+    restart: unless-stopped
+
+  litellm-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=litellm
+      - POSTGRES_PASSWORD=${LITELLM_DB_PASSWORD}
+      - POSTGRES_DB=litellm
+    volumes:
+      - litellm-db-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    restart: unless-stopped
+
   nginx:
     image: nginx:alpine
     network_mode: host
@@ -31,4 +60,8 @@ services:
       - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       - nextjs
+      - litellm-proxy
     restart: unless-stopped
+
+volumes:
+  litellm-db-data:

@@ -91,14 +91,57 @@ ${indentCert(caCert)}
         exit 1
       fi
       
-      ANTHROPIC_KEY=$(echo "$RESPONSE" | jq -r '.apiKeys.anthropic // empty')
       TELEGRAM_TOKEN=$(echo "$RESPONSE" | jq -r '.channels.telegram.botToken // empty')
       MODEL=$(echo "$RESPONSE" | jq -r '.agent.model // "anthropic/claude-sonnet-4-20250514"')
       GATEWAY_TOKEN=$(echo "$RESPONSE" | jq -r '.gatewayToken // empty')
       
+      # Check if using LiteLLM proxy or direct API key
+      PROXY_BASE_URL=$(echo "$RESPONSE" | jq -r '.proxy.baseUrl // empty')
+      PROXY_API_KEY=$(echo "$RESPONSE" | jq -r '.proxy.apiKey // empty')
+      ANTHROPIC_KEY=$(echo "$RESPONSE" | jq -r '.apiKeys.anthropic // empty')
+      
       mkdir -p "$(dirname "$MOLTBOT_CONFIG")"
       
-      cat > "$MOLTBOT_CONFIG" <<MOLTEOF
+      if [ -n "$PROXY_BASE_URL" ] && [ -n "$PROXY_API_KEY" ]; then
+        # Use LiteLLM proxy
+        cat > "$MOLTBOT_CONFIG" <<MOLTEOF
+      {
+        "agents": {
+          "defaults": {
+            "model": {
+              "primary": "$MODEL"
+            }
+          }
+        },
+        "channels": {
+          "telegram": {
+            "enabled": true,
+            "botToken": "$TELEGRAM_TOKEN"
+          }
+        },
+        "gateway": {
+          "mode": "local",
+          "bind": "lan",
+          "port": 18789,
+          "auth": {
+            "mode": "token"
+          },
+          "controlUi": {
+            "allowInsecureAuth": true
+          },
+          "trustedProxies": ["${BACKEND_IP}"]
+        },
+        "providers": {
+          "anthropic": {
+            "baseUrl": "$PROXY_BASE_URL"
+          }
+        }
+      }
+      MOLTEOF
+        echo "ANTHROPIC_API_KEY=$PROXY_API_KEY" > /opt/pocketmolt/env
+      else
+        # Use direct Anthropic API key
+        cat > "$MOLTBOT_CONFIG" <<MOLTEOF
       {
         "agents": {
           "defaults": {
@@ -127,8 +170,9 @@ ${indentCert(caCert)}
         }
       }
       MOLTEOF
+        echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY" > /opt/pocketmolt/env
+      fi
       
-      echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY" > /opt/pocketmolt/env
       echo "CLAWDBOT_GATEWAY_TOKEN=$GATEWAY_TOKEN" >> /opt/pocketmolt/env
       chmod 600 /opt/pocketmolt/env
       

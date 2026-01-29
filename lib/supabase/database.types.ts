@@ -50,6 +50,7 @@ export type Database = {
           dm_policy: 'pairing' | 'allowlist' | 'open' | null
           allow_from: string[] | null
           setup_completed: boolean | null
+          litellm_key_encrypted: string | null
           created_at: string
           updated_at: string
         }
@@ -70,6 +71,7 @@ export type Database = {
           dm_policy?: 'pairing' | 'allowlist' | 'open' | null
           allow_from?: string[] | null
           setup_completed?: boolean | null
+          litellm_key_encrypted?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -89,6 +91,7 @@ export type Database = {
           dm_policy?: 'pairing' | 'allowlist' | 'open' | null
           allow_from?: string[] | null
           setup_completed?: boolean | null
+          litellm_key_encrypted?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -178,12 +181,97 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credits: {
+        Row: {
+          id: string
+          user_id: string
+          balance_cents: number
+          lifetime_usage_cents: number
+          last_topped_up_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          balance_cents?: number
+          lifetime_usage_cents?: number
+          last_topped_up_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          balance_cents?: number
+          lifetime_usage_cents?: number
+          last_topped_up_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_credits_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      usage_log: {
+        Row: {
+          id: string
+          user_id: string
+          bot_id: string
+          model: string
+          input_tokens: number
+          output_tokens: number
+          cost_cents: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          bot_id: string
+          model: string
+          input_tokens: number
+          output_tokens: number
+          cost_cents: number
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          bot_id?: string
+          model?: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'usage_log_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'usage_log_bot_id_fkey'
+            columns: ['bot_id']
+            referencedRelation: 'bots'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_lifetime_usage: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

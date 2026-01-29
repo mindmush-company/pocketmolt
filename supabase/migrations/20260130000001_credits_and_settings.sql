@@ -45,3 +45,15 @@ CREATE POLICY "Users can view own usage" ON usage_log FOR SELECT USING (auth.uid
 -- Triggers
 CREATE TRIGGER update_user_credits_updated_at BEFORE UPDATE ON user_credits
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE OR REPLACE FUNCTION increment_lifetime_usage(p_user_id UUID, p_amount INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO user_credits (user_id, lifetime_usage_cents)
+  VALUES (p_user_id, p_amount)
+  ON CONFLICT (user_id)
+  DO UPDATE SET 
+    lifetime_usage_cents = user_credits.lifetime_usage_cents + p_amount,
+    updated_at = NOW();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

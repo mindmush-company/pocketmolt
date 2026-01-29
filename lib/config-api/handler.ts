@@ -2,6 +2,9 @@ import { ServerResponse } from 'http'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decrypt } from '@/lib/crypto/encryption'
 import { MTLSRequest } from '@/lib/mtls-server'
+import { BACKEND_IP } from '@/lib/provisioning/network'
+
+const LITELLM_PROXY_PORT = 4000
 
 interface MoltBotConfig {
   agent: {
@@ -11,6 +14,10 @@ interface MoltBotConfig {
     telegram?: {
       botToken: string
     }
+  }
+  proxy?: {
+    baseUrl: string
+    apiKey: string
   }
   apiKeys: {
     anthropic?: string
@@ -42,7 +49,7 @@ export async function handleConfigRequest(
     const supabase = createAdminClient() as any
     const { data: bot, error } = await supabase
       .from('bots')
-      .select('id, encrypted_api_key, telegram_bot_token_encrypted, private_ip, gateway_token_encrypted')
+      .select('id, encrypted_api_key, telegram_bot_token_encrypted, private_ip, gateway_token_encrypted, litellm_key_encrypted, primary_model')
       .eq('id', botId)
       .single()
 
@@ -54,13 +61,18 @@ export async function handleConfigRequest(
 
     const config: MoltBotConfig = {
       agent: {
-        model: 'anthropic/claude-sonnet-4-20250514',
+        model: bot.primary_model || 'anthropic/claude-sonnet-4-20250514',
       },
       channels: {},
       apiKeys: {},
     }
 
-    if (bot.encrypted_api_key) {
+    if (bot.litellm_key_encrypted) {
+      config.proxy = {
+        baseUrl: `http://${BACKEND_IP}:${LITELLM_PROXY_PORT}`,
+        apiKey: decrypt(bot.litellm_key_encrypted),
+      }
+    } else if (bot.encrypted_api_key) {
       try {
         const apiKeys = JSON.parse(decrypt(bot.encrypted_api_key))
         config.apiKeys = apiKeys

@@ -4,6 +4,7 @@ import { generateCloudInitWithCerts } from './cloud-init'
 import { attachServerToInfrastructure } from './network'
 import { generateBotCertificateFromCA } from '@/lib/crypto/ca'
 import { encrypt } from '@/lib/crypto/encryption'
+import { createBotKey, deleteBotKey } from '@/lib/litellm/client'
 import crypto from 'crypto'
 
 const SSH_KEY_NAME = 'pocketmolt-master'
@@ -72,6 +73,7 @@ interface BotStatusUpdate {
   clientCert?: string
   clientKeyEncrypted?: string
   gatewayTokenEncrypted?: string
+  litellmKeyEncrypted?: string
 }
 
 async function updateBotStatus(
@@ -87,6 +89,7 @@ async function updateBotStatus(
     client_cert?: string
     client_key_encrypted?: string
     gateway_token_encrypted?: string
+    litellm_key_encrypted?: string
   } = { status }
 
   if (updates?.serverId !== undefined) {
@@ -103,6 +106,9 @@ async function updateBotStatus(
   }
   if (updates?.gatewayTokenEncrypted !== undefined) {
     updateData.gateway_token_encrypted = updates.gatewayTokenEncrypted
+  }
+  if (updates?.litellmKeyEncrypted !== undefined) {
+    updateData.litellm_key_encrypted = updates.litellmKeyEncrypted
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,6 +140,7 @@ export async function provisionServer(
   userId: string
 ): Promise<ProvisionResult> {
   let createdServerId: number | undefined
+  let createdLitellmKey: string | undefined
 
   try {
     console.log(`Starting provisioning for bot ${botId} (${botName})`)
@@ -143,6 +150,16 @@ export async function provisionServer(
     const encryptedPrivateKey = encrypt(privateKey)
 
     const gatewayToken = crypto.randomBytes(32).toString('hex')
+
+    let litellmKey: string | undefined
+    try {
+      console.log(`Creating LiteLLM API key for bot ${botId}`)
+      litellmKey = await createBotKey(botId, userId)
+      createdLitellmKey = litellmKey
+      console.log(`LiteLLM key created for bot ${botId}`)
+    } catch (litellmError) {
+      console.warn(`Failed to create LiteLLM key, bot will require user API key:`, litellmError)
+    }
 
     const sshKey = await getOrCreateSSHKey()
     console.log(`Using SSH key: ${sshKey.name} (${sshKey.id})`)
@@ -195,6 +212,7 @@ export async function provisionServer(
       clientCert: certificate,
       clientKeyEncrypted: encryptedPrivateKey,
       gatewayTokenEncrypted: encrypt(gatewayToken),
+      litellmKeyEncrypted: litellmKey ? encrypt(litellmKey) : undefined,
     })
 
     return {
@@ -208,6 +226,15 @@ export async function provisionServer(
     console.error(`Provisioning failed for bot ${botId}:`, errorMessage)
 
     await cleanupFailedServer(createdServerId)
+
+    if (createdLitellmKey) {
+      try {
+        await deleteBotKey(createdLitellmKey)
+        console.log(`Cleaned up LiteLLM key for failed bot ${botId}`)
+      } catch (keyError) {
+        console.error(`Failed to cleanup LiteLLM key:`, keyError)
+      }
+    }
 
     try {
       await updateBotStatus(botId, 'failed')
