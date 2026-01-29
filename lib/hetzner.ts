@@ -134,6 +134,11 @@ export interface HetznerAction {
   } | null
 }
 
+export interface CreateServerPublicNet {
+  enable_ipv4?: boolean
+  enable_ipv6?: boolean
+}
+
 export interface CreateServerRequest {
   name: string
   server_type: string
@@ -144,6 +149,8 @@ export interface CreateServerRequest {
   labels?: Record<string, string>
   user_data?: string
   start_after_create?: boolean
+  public_net?: CreateServerPublicNet
+  networks?: number[]
 }
 
 export interface CreateServerResponse {
@@ -362,6 +369,30 @@ class HetznerClient {
     )
   }
 
+  async addNetworkRoute(
+    networkId: number,
+    destination: string,
+    gateway: string
+  ): Promise<{ action: HetznerAction }> {
+    return this.request<{ action: HetznerAction }>(
+      'POST',
+      `/networks/${networkId}/actions/add_route`,
+      { destination, gateway }
+    )
+  }
+
+  async deleteNetworkRoute(
+    networkId: number,
+    destination: string,
+    gateway: string
+  ): Promise<{ action: HetznerAction }> {
+    return this.request<{ action: HetznerAction }>(
+      'POST',
+      `/networks/${networkId}/actions/delete_route`,
+      { destination, gateway }
+    )
+  }
+
   async createFirewall(
     params: CreateFirewallRequest
   ): Promise<{ firewall: HetznerFirewall; actions: HetznerAction[] }> {
@@ -450,6 +481,10 @@ export const hetzner = {
         getHetzner().attachServerToNetwork(serverId, params),
       detachServer: (serverId: number, networkId: number) =>
         getHetzner().detachServerFromNetwork(serverId, networkId),
+      addRoute: (networkId: number, destination: string, gateway: string) =>
+        getHetzner().addNetworkRoute(networkId, destination, gateway),
+      deleteRoute: (networkId: number, destination: string, gateway: string) =>
+        getHetzner().deleteNetworkRoute(networkId, destination, gateway),
     }
   },
   get firewalls() {

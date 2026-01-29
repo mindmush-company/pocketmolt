@@ -1,16 +1,18 @@
 import { hetzner, HetznerServer, HetznerSSHKey } from '@/lib/hetzner'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateCloudInitWithCerts } from './cloud-init'
-import { attachServerToInfrastructure } from './network'
+import { attachServerToInfrastructure, getOrCreateNetworkInfrastructure } from './network'
+import { ensureNatGateway, incrementBotCount, decrementBotCount } from './nat-gateway'
 import { generateBotCertificateFromCA } from '@/lib/crypto/ca'
 import { encrypt } from '@/lib/crypto/encryption'
 import { createBotKey, deleteBotKey } from '@/lib/litellm/client'
 import crypto from 'crypto'
 
-const SSH_KEY_NAME = 'pocketmolt-master'
-const SERVER_TYPE = 'cx23'
+const SSH_KEY_NAME = 'pocketmolt@system'
+const SERVER_TYPE = 'cax11'
 const DATACENTER_LOCATION = 'nbg1'
 const SERVER_IMAGE = 'ubuntu-22.04'
+const USE_NAT_GATEWAY = true
 
 interface BotRecord {
   id: string
@@ -74,6 +76,7 @@ interface BotStatusUpdate {
   clientKeyEncrypted?: string
   gatewayTokenEncrypted?: string
   litellmKeyEncrypted?: string
+  natGatewayId?: string
 }
 
 async function updateBotStatus(
@@ -90,6 +93,7 @@ async function updateBotStatus(
     client_key_encrypted?: string
     gateway_token_encrypted?: string
     litellm_key_encrypted?: string
+    nat_gateway_id?: string
   } = { status }
 
   if (updates?.serverId !== undefined) {
@@ -109,6 +113,9 @@ async function updateBotStatus(
   }
   if (updates?.litellmKeyEncrypted !== undefined) {
     updateData.litellm_key_encrypted = updates.litellmKeyEncrypted
+  }
+  if (updates?.natGatewayId !== undefined) {
+    updateData.nat_gateway_id = updates.natGatewayId
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,8 +149,17 @@ export async function provisionServer(
   let createdServerId: number | undefined
   let createdLitellmKey: string | undefined
 
+  let natGateway: { id: string; privateIp: string } | null = null
+
   try {
     console.log(`Starting provisioning for bot ${botId} (${botName})`)
+
+    // Get NAT gateway first if enabled
+    if (USE_NAT_GATEWAY) {
+      console.log(`Ensuring NAT gateway exists for bot ${botId}`)
+      natGateway = await ensureNatGateway()
+      console.log(`Using NAT gateway ${natGateway.id} at ${natGateway.privateIp}`)
+    }
 
     console.log(`Generating mTLS certificates for bot ${botId}`)
     const { certificate, privateKey, caCertificate } = await generateBotCertificateFromCA(botId)
@@ -172,6 +188,7 @@ export async function provisionServer(
       clientKey: privateKey,
       caCert: caCertificate,
       gatewayToken,
+      natGatewayIp: natGateway?.privateIp,
     })
 
     const serverName = `pocketmolt-${botId.slice(0, 8)}`
@@ -188,6 +205,8 @@ export async function provisionServer(
       },
       user_data: cloudInit,
       start_after_create: true,
+      // Skip public IP when using NAT gateway
+      public_net: natGateway ? { enable_ipv4: false, enable_ipv6: false } : undefined,
     })
 
     createdServerId = server.id
@@ -206,6 +225,11 @@ export async function provisionServer(
     const privateIp = await attachServerToInfrastructure(server.id)
     console.log(`Server ${server.id} has private IP ${privateIp}`)
 
+    if (natGateway) {
+      await incrementBotCount(natGateway.id)
+      console.log(`Incremented bot count for NAT gateway ${natGateway.id}`)
+    }
+
     await updateBotStatus(botId, 'running', {
       serverId: server.id,
       privateIp,
@@ -213,6 +237,7 @@ export async function provisionServer(
       clientKeyEncrypted: encryptedPrivateKey,
       gatewayTokenEncrypted: encrypt(gatewayToken),
       litellmKeyEncrypted: litellmKey ? encrypt(litellmKey) : undefined,
+      natGatewayId: natGateway?.id,
     })
 
     return {
@@ -256,11 +281,11 @@ export async function deprovisionServer(botId: string): Promise<{ success: boole
 
     const { data, error: fetchError } = await supabase
       .from('bots')
-      .select('hetzner_server_id')
+      .select('hetzner_server_id, nat_gateway_id')
       .eq('id', botId)
       .single()
 
-    const bot = data as Pick<BotRecord, 'hetzner_server_id'> | null
+    const bot = data as Pick<BotRecord, 'hetzner_server_id'> & { nat_gateway_id?: string } | null
 
     if (fetchError || !bot) {
       throw new Error(`Bot ${botId} not found`)
@@ -279,9 +304,14 @@ export async function deprovisionServer(botId: string): Promise<{ success: boole
     await hetzner.servers.delete(serverId)
     console.log(`Deleted server ${serverId} for bot ${botId}`)
 
+    if (bot.nat_gateway_id) {
+      await decrementBotCount(bot.nat_gateway_id)
+      console.log(`Decremented bot count for NAT gateway ${bot.nat_gateway_id}`)
+    }
+
     await supabase
       .from('bots')
-      .update({ hetzner_server_id: null, status: 'stopped' })
+      .update({ hetzner_server_id: null, status: 'stopped', nat_gateway_id: null })
       .eq('id', botId)
 
     return { success: true }

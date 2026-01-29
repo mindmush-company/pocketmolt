@@ -10,6 +10,7 @@ interface CloudInitOptions {
   clientKey: string
   caCert: string
   gatewayToken: string
+  natGatewayIp?: string
 }
 
 export function generateCloudInit(botId: string, botName: string): string {
@@ -29,9 +30,52 @@ function indentCert(cert: string): string {
 }
 
 export function generateCloudInitWithCerts(options: CloudInitOptions): string {
-  const { botId, botName, privateIp, clientCert, clientKey, caCert, gatewayToken } = options
+  const { botId, botName, privateIp, clientCert, clientKey, caCert, gatewayToken, natGatewayIp } = options
 
   const configApiUrl = `https://${BACKEND_IP}:${CONFIG_API_PORT}`
+  
+  const natRoutingFiles = natGatewayIp ? `
+  - path: /etc/systemd/network/90-private.network
+    permissions: '0644'
+    content: |
+      [Match]
+      Name=ens10
+      
+      [Network]
+      DHCP=yes
+      
+      [Route]
+      Gateway=${natGatewayIp}
+      Destination=0.0.0.0/0
+      Metric=100
+      
+      [DHCP]
+      UseRoutes=false
+      UseDNS=false
+
+  - path: /etc/systemd/resolved.conf.d/pocketmolt.conf
+    permissions: '0644'
+    content: |
+      [Resolve]
+      DNS=185.12.64.1 185.12.64.2
+      FallbackDNS=8.8.8.8 1.1.1.1
+      Domains=~.
+` : ''
+
+  const natRoutingCommands = natGatewayIp ? `
+  - |
+    echo "Waiting for private network interface..."
+    for i in $(seq 1 60); do
+      if ip link show ens10 2>/dev/null | grep -q UP; then
+        echo "Private network up after \${i}s"
+        break
+      fi
+      sleep 1
+    done
+  - systemctl restart systemd-networkd
+  - systemctl restart systemd-resolved
+  - ip route replace default via ${natGatewayIp} dev ens10 || echo "Route already set"
+` : ''
 
   return `#cloud-config
 package_update: true
@@ -222,12 +266,12 @@ ${indentCert(caCert)}
       else
         echo "Gateway: unreachable"
       fi
-
+${natRoutingFiles}
 runcmd:
   - mkdir -p /opt/pocketmolt/certs
   - mkdir -p /opt/pocketmolt/bin
   - mkdir -p /var/log/pocketmolt
-  - mkdir -p /root/clawd
+  - mkdir -p /root/clawd${natRoutingCommands}
   - curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
   - apt-get install -y nodejs
   - npm install -g clawdbot@latest

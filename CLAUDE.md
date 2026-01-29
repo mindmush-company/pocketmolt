@@ -75,7 +75,8 @@ pocketmolt/
 │   ├── provisioning/
 │   │   ├── server.ts             # VPS provisioning with certs
 │   │   ├── cloud-init.ts         # Cloud-init with MoltBot install
-│   │   └── network.ts            # Private network management
+│   │   ├── network.ts            # Private network management
+│   │   └── nat-gateway.ts        # NAT gateway provisioning
 │   ├── hetzner.ts                # Hetzner Cloud API client
 │   ├── mtls-server.ts            # mTLS HTTPS server
 │   ├── stripe.ts                 # Stripe SDK wrapper
@@ -120,6 +121,7 @@ Three main tables with Row Level Security:
 - status: 'starting' | 'running' | 'stopped' | 'failed'
 - hetzner_server_id: text?
 - private_ip: text?                    # Private network IP (10.0.x.x)
+- nat_gateway_id: uuid?                # FK to nat_gateways (for NAT routing)
 - encrypted_api_key: text              # AES-256-GCM encrypted
 - telegram_bot_token_encrypted: text
 - client_cert: text?                   # mTLS client certificate
@@ -270,6 +272,7 @@ supabase gen types typescript --local > lib/supabase/database.types.ts
 - [x] Bot status management (start/stop/restart)
 - [x] Individual bot detail pages
 - [x] Private network infrastructure (10.0.0.0/16)
+- [x] NAT gateway for shared outbound IP
 - [x] mTLS Certificate Authority
 - [x] AES-256-GCM encryption for secrets
 - [x] API key configuration UI
@@ -350,6 +353,152 @@ docker compose restart nginx
 4. **CX23 server type**: €4.35/month (2 vCPU, 4GB RAM, 40GB SSD). Profitable at €30/month subscription.
 
 5. **Fire-and-forget provisioning**: Webhook returns immediately, provisioning runs async. Prevents Stripe webhook timeout.
+
+6. **NAT gateway for IP conservation**: Bot servers don't get public IPs. They route outbound traffic through a shared NAT gateway, avoiding Hetzner's primary IP quota limits.
+
+## NAT Gateway Architecture
+
+Bot servers share outbound internet access through a NAT gateway, eliminating the need for individual public IPs.
+
+### Why NAT Gateway?
+
+- **IP quota limits**: Hetzner has default limits on primary IPs per project
+- **Cost savings**: Public IPs cost extra; NAT gateway amortizes across 100 bots
+- **Security**: Bot servers have no public attack surface
+
+### Network Topology
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Hetzner Private Network                      │
+│                       10.0.0.0/16                               │
+│                                                                 │
+│  ┌──────────────────┐                                           │
+│  │   NAT Gateway    │◄── public IP (MASQUERADE)                 │
+│  │   10.0.0.254     │                                           │
+│  └────────┬─────────┘                                           │
+│           │ default route: 0.0.0.0/0 → 10.0.0.254               │
+│           │                                                     │
+│  ┌────────┴─────────┐     ┌──────────────────┐                 │
+│  │  Backend Server  │     │   Bot Server 1   │                 │
+│  │    10.0.0.2      │     │    10.0.0.3      │◄── NO public IP │
+│  │                  │     │                  │                  │
+│  │  - Next.js:3000  │     │  - clawdbot:18789│                 │
+│  │  - Config:8443   │     │                  │                 │
+│  │  - nginx:80,443  │     └──────────────────┘                 │
+│  └──────────────────┘     ┌──────────────────┐                 │
+│         │                 │   Bot Server 2   │                 │
+│         │                 │    10.0.0.4      │◄── NO public IP │
+│         └─────────────────┤                  │                 │
+│                           │  - clawdbot:18789│                 │
+│                           └──────────────────┘                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### IP Allocation
+
+| Server Type | IP | Notes |
+|-------------|-----|-------|
+| NAT Gateway | 10.0.0.254 | First gateway; subsequent: 10.0.1.254, etc. |
+| Backend | 10.0.0.2 | Fixed, has public IP |
+| Bot servers | 10.0.0.3+ | Auto-assigned by Hetzner DHCP, no public IP |
+
+### Database Schema
+
+```sql
+-- nat_gateways table
+- id: uuid
+- name: text                    -- 'gw-1', 'gw-2', etc.
+- hetzner_server_id: text
+- private_ip: text              -- '10.0.0.1'
+- public_ip: text?
+- status: 'provisioning' | 'active' | 'inactive' | 'failed'
+- bot_count: integer            -- current bots using this gateway
+- max_bots: integer             -- default 100
+- health_status: text
+- last_health_check_at: timestamp
+- created_at: timestamp
+
+-- bots table addition
+- nat_gateway_id: uuid?         -- FK to nat_gateways
+```
+
+### Provisioning Flow
+
+```
+provisionServer(botId)
+  │
+  ▼
+if USE_NAT_GATEWAY:
+  │
+  ▼
+ensureNatGateway()
+  ├── Check for active gateway with capacity (bot_count < max_bots)
+  ├── If none: provisionNatGateway('gw-N', '10.0.X.1')
+  │     ├── Create CX22 server with cloud-init (iptables MASQUERADE)
+  │     ├── Attach to private network at specified IP
+  │     ├── Add route 0.0.0.0/0 → gateway IP to network
+  │     └── Return gateway record
+  └── Return existing gateway
+  │
+  ▼
+Create bot server with:
+  ├── public_net: { enable_ipv4: false, enable_ipv6: false }
+  └── cloud-init with natGatewayIp: gateway.privateIp
+  │
+  ▼
+Bot server boots with:
+  ├── /etc/systemd/network/90-private.network (route via NAT gateway)
+  └── DNS: 185.12.64.1 (Hetzner), fallback 8.8.8.8
+  │
+  ▼
+incrementBotCount(gateway.id)
+```
+
+### Scaling Strategy
+
+- **100 bots per NAT gateway**: Conservative limit for conntrack table
+- **Auto-provision new gateway**: When all gateways at capacity
+- **Gateway naming**: gw-1, gw-2, etc. with IPs 10.0.0.1, 10.0.1.1, etc.
+
+### SSH Access (No Public IP)
+
+Bot servers don't have public IPs, so use the backend as a bastion:
+
+```bash
+# Jump through backend to reach bot server
+ssh -J root@<backend-public-ip> root@10.0.0.3 -i ~/.ssh/pocketmolt-master
+
+# Or configure ~/.ssh/config:
+Host pocketmolt-backend
+  HostName <backend-public-ip>
+  User root
+  IdentityFile ~/.ssh/pocketmolt-master
+
+Host pocketmolt-bot-*
+  ProxyJump pocketmolt-backend
+  User root
+  IdentityFile ~/.ssh/pocketmolt-master
+
+# Then: ssh pocketmolt-bot-10.0.0.3
+```
+
+### Relevant Files
+
+| File | Purpose |
+|------|---------|
+| `lib/provisioning/nat-gateway.ts` | NAT gateway provisioning and management |
+| `lib/provisioning/server.ts` | Bot provisioning (calls ensureNatGateway) |
+| `lib/provisioning/cloud-init.ts` | Cloud-init with NAT routing config |
+| `scripts/provision-nat-gateway.ts` | CLI to manually provision a NAT gateway |
+| `supabase/migrations/20260131000001_nat_gateways.sql` | Database migration |
+
+### Manual NAT Gateway Provisioning
+
+```bash
+# Provision NAT gateway manually (usually auto-provisioned)
+pnpm tsx scripts/provision-nat-gateway.ts
+```
 
 ## Backend ↔ Bot Server Interaction
 
