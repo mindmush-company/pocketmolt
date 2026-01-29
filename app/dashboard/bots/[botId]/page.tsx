@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BotActions } from "@/components/dashboard/bot-actions"
 import { BotConfigForm } from "@/components/dashboard/bot-config-form"
 import { BotHealthStatus } from "@/components/dashboard/bot-health-status"
+import { BotUIEmbed } from "@/components/dashboard/bot-ui-embed"
 import { createClient } from "@/lib/supabase/server"
 import { hetzner } from "@/lib/hetzner"
 
@@ -149,6 +150,14 @@ export default async function BotDetailsPage({ params }: BotDetailsProps) {
 
         <BotHealthStatus botId={bot.id} botStatus={bot.status} />
       </div>
+
+      {bot.status === 'running' && (
+        <BotUIEmbed
+          botId={bot.id}
+          botStatus={bot.status}
+          botName={bot.name}
+        />
+      )}
     </div>
   )
 }

@@ -349,6 +349,171 @@ docker compose restart nginx
 
 5. **Fire-and-forget provisioning**: Webhook returns immediately, provisioning runs async. Prevents Stripe webhook timeout.
 
+## Backend ↔ Bot Server Interaction
+
+### Network Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Hetzner Private Network                      │
+│                       10.0.0.0/16                               │
+│                                                                 │
+│  ┌──────────────────┐     ┌──────────────────┐                 │
+│  │  Backend Server  │     │   Bot Server 1   │                 │
+│  │    10.0.0.2      │     │    10.0.0.3      │                 │
+│  │                  │     │                  │                 │
+│  │  - Next.js:3000  │     │  - clawdbot:18789│                 │
+│  │  - Config:8443   │     │                  │                 │
+│  │  - nginx:80,443  │     └──────────────────┘                 │
+│  └──────────────────┘     ┌──────────────────┐                 │
+│                           │   Bot Server 2   │                 │
+│                           │    10.0.0.4      │                 │
+│                           │                  │                 │
+│                           │  - clawdbot:18789│                 │
+│                           └──────────────────┘                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- **Backend**: Fixed at `10.0.0.2`, runs Next.js app + mTLS Config API
+- **Bot servers**: Assigned sequentially (`10.0.0.3`, `10.0.0.4`, etc.)
+- **All communication** between backend and bots happens over private network
+
+### Bot Server File Structure
+
+```
+/opt/pocketmolt/
+├── certs/
+│   ├── ca.crt              # CA certificate (verify backend)
+│   ├── client.crt          # Bot's mTLS client certificate
+│   └── client.key          # Bot's private key (600 perms)
+├── bin/
+│   ├── fetch-config.sh     # Fetches config from backend via mTLS
+│   └── health.sh           # Manual health check script
+├── config.json             # Bot metadata (id, name, private_ip)
+└── env                     # Environment vars for clawdbot service
+
+/root/.clawdbot/
+└── moltbot.json            # Clawdbot configuration (model, channels, gateway)
+
+/etc/systemd/system/
+└── pocketmolt-bot.service  # Systemd service definition
+```
+
+### Service Configuration
+
+The `pocketmolt-bot.service` runs clawdbot with:
+```ini
+ExecStartPre=/opt/pocketmolt/bin/fetch-config.sh
+ExecStart=/usr/bin/clawdbot gateway --allow-unconfigured --bind lan --token <gateway-token>
+EnvironmentFile=/opt/pocketmolt/env
+```
+
+**Key flags**:
+- `--allow-unconfigured`: Allows headless startup without interactive setup
+- `--bind lan`: Binds to all interfaces (required for health checks over private network)
+- `--token <token>`: Authentication token for LAN binding
+
+### Environment File (`/opt/pocketmolt/env`)
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-api03-...
+CLAWDBOT_GATEWAY_TOKEN=<32-byte-hex-token>
+```
+
+**Important**: The `fetch-config.sh` script overwrites this file on each service start. It must write BOTH the API key AND the gateway token.
+
+### Health Check Flow
+
+```
+Dashboard UI
+    │
+    ▼
+GET /api/bots/{botId}/health  (requires auth)
+    │
+    ▼
+Backend queries bot.private_ip from database
+    │
+    ▼
+HTTP GET http://{private_ip}:18789/  (over private network)
+    │
+    ▼
+Clawdbot returns HTML (Control UI) with 200 OK
+    │
+    ▼
+Dashboard shows "healthy" status
+```
+
+**Health check details**:
+- Protocol: **HTTP** (not HTTPS) - clawdbot gateway serves HTTP
+- Port: **18789**
+- Path: `/` (returns Clawdbot Control UI HTML)
+- Success: Any 200 response = healthy
+- Timeout: 5 seconds
+
+### Configuration Delivery Flow
+
+```
+Bot Server starts pocketmolt-bot.service
+    │
+    ▼
+ExecStartPre runs fetch-config.sh
+    │
+    ▼
+curl with mTLS client cert → https://10.0.0.2:8443/config
+    │
+    ▼
+Config API verifies client cert, extracts botId from CN
+    │
+    ▼
+Config API decrypts API keys from database
+    │
+    ▼
+Returns JSON: { agent, channels, apiKeys }
+    │
+    ▼
+fetch-config.sh writes:
+  - /root/.clawdbot/moltbot.json (model, channels, gateway config)
+  - /opt/pocketmolt/env (ANTHROPIC_API_KEY, CLAWDBOT_GATEWAY_TOKEN)
+    │
+    ▼
+ExecStart launches clawdbot gateway
+```
+
+### Timing Considerations
+
+| Event | Duration |
+|-------|----------|
+| Server provisioning (Hetzner) | ~2-3 minutes |
+| Cloud-init completion | ~3-4 minutes |
+| **Clawdbot gateway startup** | **~55 seconds** |
+
+**Important**: After a restart or fresh provisioning, health checks will return "unreachable" for about 55 seconds while clawdbot initializes. This is normal.
+
+### SSH Access
+
+```bash
+# Backend server
+ssh root@<backend-public-ip> -i ~/.ssh/pocketmolt-master
+
+# Bot server (use public IP from Hetzner, not private IP)
+ssh root@<bot-public-ip> -i ~/.ssh/pocketmolt-master
+
+# Useful commands on bot server
+systemctl status pocketmolt-bot      # Service status
+journalctl -u pocketmolt-bot -f      # Follow logs
+cat /opt/pocketmolt/env              # Check env vars
+cat /root/.clawdbot/moltbot.json     # Check clawdbot config
+```
+
+### Rebuild & Deploy Backend
+
+```bash
+ssh root@<backend-public-ip> -i ~/.ssh/pocketmolt-master
+cd /opt/pocketmolt/app && git pull
+cd docker && docker compose build nextjs config-api
+docker compose up -d && docker compose restart nginx
+```
+
 ## Gotchas
 
 1. **Next.js 15+ async cookies**: `await cookies()` - returns Promise now
@@ -356,6 +521,8 @@ docker compose restart nginx
 3. **Build-time env vars**: Pages using Supabase need `export const dynamic = 'force-dynamic'`
 4. **RLS with service role**: Service role bypasses RLS - use carefully
 5. **OAuth callback**: Requires Supabase dashboard configuration for each provider
+6. **Clawdbot startup delay**: Gateway takes ~55 seconds to start - health checks will fail during this window
+7. **fetch-config.sh overwrites env**: Must append gateway token after writing API key, not just write API key
 
 ## For AI Assistants
 

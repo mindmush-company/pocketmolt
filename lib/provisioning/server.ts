@@ -71,6 +71,7 @@ interface BotStatusUpdate {
   privateIp?: string
   clientCert?: string
   clientKeyEncrypted?: string
+  gatewayTokenEncrypted?: string
 }
 
 async function updateBotStatus(
@@ -85,6 +86,7 @@ async function updateBotStatus(
     private_ip?: string
     client_cert?: string
     client_key_encrypted?: string
+    gateway_token_encrypted?: string
   } = { status }
 
   if (updates?.serverId !== undefined) {
@@ -98,6 +100,9 @@ async function updateBotStatus(
   }
   if (updates?.clientKeyEncrypted !== undefined) {
     updateData.client_key_encrypted = updates.clientKeyEncrypted
+  }
+  if (updates?.gatewayTokenEncrypted !== undefined) {
+    updateData.gateway_token_encrypted = updates.gatewayTokenEncrypted
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,6 +194,7 @@ export async function provisionServer(
       privateIp,
       clientCert: certificate,
       clientKeyEncrypted: encryptedPrivateKey,
+      gatewayTokenEncrypted: encrypt(gatewayToken),
     })
 
     return {
