@@ -41,6 +41,53 @@ function hashIp(ip: string): string {
   return createHash("sha256").update(ip).digest("hex").slice(0, 16)
 }
 
+/* ─── Klaviyo (v3 API) ─── */
+async function subscribeToKlaviyo(email: string) {
+  const apiKey = process.env.KLAVIYO_API_KEY
+  const listId = process.env.KLAVIYO_LIST_ID
+  if (!apiKey || !listId) return
+
+  try {
+    // 1. Create or update the profile
+    const profileRes = await fetch("https://a.klaviyo.com/api/profile-import/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Klaviyo-API-Key ${apiKey}`,
+        revision: "2024-10-15",
+      },
+      body: JSON.stringify({
+        data: {
+          type: "profile",
+          attributes: {
+            email,
+            properties: { waitlist_source: "pocketmolt" },
+          },
+        },
+      }),
+    })
+
+    const profileData = await profileRes.json()
+    const profileId = profileData?.data?.id
+    if (!profileId) return
+
+    // 2. Subscribe profile to the list
+    await fetch(`https://a.klaviyo.com/api/lists/${listId}/relationships/profiles/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Klaviyo-API-Key ${apiKey}`,
+        revision: "2024-10-15",
+      },
+      body: JSON.stringify({
+        data: [{ type: "profile", id: profileId }],
+      }),
+    })
+  } catch (err) {
+    console.error("[waitlist] Klaviyo error:", err)
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -94,6 +141,9 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
+
+    // Subscribe to Klaviyo (fire and forget — don't block the response)
+    subscribeToKlaviyo(normalizedEmail)
 
     return NextResponse.json({ message: "You're on the list!" })
   } catch {

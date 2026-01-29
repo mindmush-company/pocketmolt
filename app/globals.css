@@ -11,8 +11,8 @@
 @theme inline {
   --color-background: #000000;
   --color-foreground: #E8E4DE;
-  --font-sans: var(--font-body), "IBM Plex Sans", sans-serif;
-  --font-display: var(--font-display), "Bricolage Grotesque", sans-serif;
+  --font-sans: var(--font-body), "Instrument Sans", sans-serif;
+  --font-display: var(--font-display), "Space Grotesk", sans-serif;
   --font-mono: var(--font-mono), "JetBrains Mono", monospace;
   --color-sidebar-ring: #A855F7;
   --color-sidebar-border: #1A1A1A;
@@ -108,14 +108,17 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html, body {
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-body), "IBM Plex Sans", sans-serif;
+    font-family: var(--font-body), "Instrument Sans", sans-serif;
     letter-spacing: -0.01em;
     line-height: 1.7;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display), "Bricolage Grotesque", sans-serif;
+    font-family: var(--font-display), "Space Grotesk", sans-serif;
     letter-spacing: -0.03em;
     line-height: 1.1;
   }

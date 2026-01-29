@@ -437,66 +437,46 @@ function PhoneWaitlistUI() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center px-5 pt-6 pb-2">
+    <div className="flex flex-1 flex-col items-center justify-between px-4 pt-4 pb-1.5">
       {/* App icon + branding */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-5">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
         {/* Premium app icon with layered glow */}
         <div className="relative">
-          <div className="absolute -inset-3 rounded-3xl bg-[#A855F7]/10 blur-xl" />
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-[18px] bg-gradient-to-br from-[#A855F7] via-[#9333EA] to-[#7C3AED] [box-shadow:0_4px_16px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
-            <Terminal className="h-7 w-7 text-white" />
+          <div className="absolute -inset-2 rounded-2xl bg-[#A855F7]/10 blur-lg" />
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-[14px] bg-gradient-to-br from-[#A855F7] via-[#9333EA] to-[#7C3AED] [box-shadow:0_4px_16px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
+            <Terminal className="h-5 w-5 text-white" />
           </div>
         </div>
-        <div className="flex flex-col items-center gap-1.5">
-          <p className="font-display text-[17px] font-bold tracking-tight text-white">PocketMolt</p>
-          <p className="max-w-[180px] text-center text-[12px] leading-snug text-white/35">
-            Deploy your MoltBot in minutes
-          </p>
-        </div>
-
-        {/* Trust indicators */}
-        <div className="flex items-center gap-3 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 py-1.5">
-          <div className="flex items-center gap-1.5">
-            <div className="h-[6px] w-[6px] rounded-full bg-emerald-400 [box-shadow:0_0_6px_rgba(52,211,153,0.5)]" />
-            <span className="text-[10px] font-medium text-white/40">Encrypted</span>
-          </div>
-          <div className="h-3 w-px bg-white/[0.08]" />
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="h-[10px] w-[10px] text-white/30" />
-            <span className="text-[10px] font-medium text-white/40">Secured</span>
-          </div>
-        </div>
+        <p className="font-display text-[15px] font-bold tracking-tight text-white">PocketMolt</p>
+        <p className="max-w-[160px] text-center text-[11px] leading-snug text-white/30">
+          Deploy your MoltBot in minutes
+        </p>
       </div>
 
       {/* Email input + button */}
-      <div className="w-full space-y-3 pb-5">
+      <div className="w-full space-y-2 pb-3">
         {status === "success" ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#A855F7]/10 bg-[#A855F7]/[0.04] py-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#A855F7]/10">
-              <CheckCircle className="h-5 w-5 text-[#A855F7]" />
-            </div>
-            <p className="text-[14px] font-semibold text-white/90">You&apos;re on the list!</p>
-            <p className="text-[11px] text-white/35">We&apos;ll be in touch soon</p>
+          <div className="flex flex-col items-center gap-2 py-3">
+            <CheckCircle className="h-5 w-5 text-[#A855F7]" />
+            <p className="text-[13px] font-semibold text-white/90">You&apos;re on the list!</p>
           </div>
         ) : (
           <>
-            <div className="relative">
-              <input
-                type="email"
-                placeholder="you@email.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  if (status === "error" || status === "rate-limited") setStatus("idle")
-                }}
-                onFocus={(e) => {
-                  setTimeout(() => {
-                    e.target.scrollIntoView({ behavior: "smooth", block: "center" })
-                  }, 300)
-                }}
-                className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3.5 text-[14px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
-              />
-            </div>
+            <input
+              type="email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (status === "error" || status === "rate-limited") setStatus("idle")
+              }}
+              onFocus={(e) => {
+                setTimeout(() => {
+                  e.target.scrollIntoView({ behavior: "smooth", block: "center" })
+                }, 300)
+              }}
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
+            />
             {/* Honeypot — hidden from humans, bots fill it */}
             <input
               type="text"
@@ -511,30 +491,30 @@ function PhoneWaitlistUI() {
             <button
               onClick={handleSubmit}
               disabled={status === "loading" || !consent}
-              className="w-full rounded-2xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-3.5 text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-40 [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
+              className="w-full rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-2.5 text-[13px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-40 [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
             {/* GDPR consent */}
-            <label className="flex items-start gap-2.5 cursor-pointer pt-0.5">
+            <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
+                className="mt-0.5 h-3 w-3 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
               />
-              <span className="text-[10px] leading-snug text-white/30">
+              <span className="text-[9px] leading-snug text-white/25">
                 I agree to the{" "}
-                <a href="/terms" target="_blank" className="underline hover:text-white/45">Terms of Service</a>{" "}
-                and to receive updates. No spam, unsubscribe anytime.
+                <a href="/terms" target="_blank" className="underline hover:text-white/40">Terms</a>{" "}
+                and to receive updates.
               </span>
             </label>
           </>
         )}
         {(status === "error" || status === "rate-limited") && (
-          <p className="text-center text-[11px] text-red-400">{errorMsg}</p>
+          <p className="text-center text-[10px] text-red-400">{errorMsg}</p>
         )}
-        <p className="text-center text-[10px] tracking-wide text-white/20">
+        <p className="text-center text-[9px] tracking-wide text-white/15">
           1,000 spots &middot; first come, first serve
         </p>
       </div>
@@ -558,7 +538,7 @@ export default function Home() {
   const heroY = useTransform(heroScroll, [0, 0.7], [0, -80])
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 w-full border-b border-white/[0.04] bg-black/80 backdrop-blur-xl [box-shadow:0_1px_0_rgba(255,255,255,0.03)]">
         <div className="container flex h-16 items-center justify-between">
