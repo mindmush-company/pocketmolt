@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import Link from "next/link"
 import { motion, useScroll, useTransform, useInView } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -532,9 +531,12 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 w-full border-b border-white/[0.04] bg-black/80 backdrop-blur-xl [box-shadow:0_1px_0_rgba(255,255,255,0.03)]">
         <div className="container flex h-16 items-center justify-between">
-          <Link className="flex items-center" href="/">
+          <a
+            className="flex cursor-pointer items-center"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
             <span className="font-display text-lg font-semibold">PocketMolt</span>
-          </Link>
+          </a>
           <div className="flex items-center gap-1 md:gap-2">
             <nav className="flex items-center">
               {["How It Works", "Security", "Team"].map((item) => (
