@@ -75,16 +75,26 @@ function Reveal({
 function HeroPattern() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* Dot grid — circuit board feel */}
+      {/* Silver metallic gradient sweep — top-left to bottom-right */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-[0.035]"
         style={{
-          backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
+          background:
+            "linear-gradient(135deg, transparent 0%, #C0C0C0 15%, transparent 30%, #D8D8D8 45%, transparent 55%, #A8A8A8 70%, transparent 85%)",
+          backgroundSize: "200% 200%",
         }}
       />
-      {/* Radial fade so dots dissolve toward edges */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,transparent_30%,#000000_100%)]" />
+      {/* Subtle horizontal brushed-metal lines */}
+      <div
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #ffffff 3px, #ffffff 4px)",
+        }}
+      />
+      {/* Silver radial highlight — like light catching metal */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_35%,rgba(200,200,210,0.06),transparent_70%)]" />
+      {/* Edge fade to black */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_40%,transparent_25%,#000000_100%)]" />
     </div>
   )
 }
