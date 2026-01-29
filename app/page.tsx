@@ -9,7 +9,6 @@ import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import Lenis from "@studio-freight/lenis"
 import {
-  Shield,
   Lock,
   Terminal,
   CheckCircle,
@@ -496,7 +495,7 @@ function PhoneWaitlistUI() {
             <button
               onClick={handleSubmit}
               disabled={status === "loading"}
-              className="w-full rounded-xl bg-gradient-to-b from-primary to-primary/85 py-3 text-[14px] font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(209,78,67,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(209,78,67,0.3)]"
+              className="w-full rounded-xl bg-gradient-to-b from-primary to-primary/85 py-3 text-[14px] font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] active:scale-[0.98] disabled:opacity-60 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(220,38,38,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(220,38,38,0.3)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
@@ -533,33 +532,29 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 w-full border-b border-white/[0.04] bg-black/80 backdrop-blur-xl [box-shadow:0_1px_0_rgba(255,255,255,0.03)]">
         <div className="container flex h-16 items-center justify-between">
-          <Link className="flex items-center gap-2.5" href="/">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-b from-primary to-primary/85 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3)]">
-              <Shield className="h-4 w-4 text-primary-foreground" />
-            </div>
+          <Link className="flex items-center" href="/">
             <span className="font-display text-lg font-semibold">PocketMolt</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <nav className="hidden md:flex items-center">
+          <div className="flex items-center gap-1 md:gap-2">
+            <nav className="flex items-center">
               {["How It Works", "Security", "Team"].map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="rounded-lg px-4 py-2 text-sm text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-white/[0.03]"
+                  className="hidden rounded-lg px-4 py-2 text-sm text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-white/[0.03] md:block"
                 >
                   {item}
                 </a>
               ))}
             </nav>
-            <a href="#waitlist" className="ml-3">
+            <a href="#waitlist" className="ml-1 md:ml-3">
               <Button
                 size="sm"
-                className="h-9 rounded-lg bg-gradient-to-b from-primary to-primary/85 px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(209,78,67,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(209,78,67,0.3)]"
+                className="h-9 rounded-lg bg-gradient-to-b from-primary to-primary/85 px-5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(220,38,38,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(220,38,38,0.3)]"
               >
                 Join Waitlist
               </Button>
             </a>
-
           </div>
         </div>
       </header>
@@ -620,7 +615,7 @@ export default function Home() {
                   >
                     <Button
                       onClick={() => setHeroFocusPhone(true)}
-                      className="h-13 rounded-xl bg-gradient-to-b from-primary to-primary/85 px-8 text-[15px] font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(209,78,67,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(209,78,67,0.3)]"
+                      className="h-13 rounded-xl bg-gradient-to-b from-primary to-primary/85 px-8 text-[15px] font-medium text-primary-foreground transition-all duration-200 hover:-translate-y-[1px] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_2px_4px_rgba(0,0,0,0.3),0_8px_16px_rgba(220,38,38,0.2)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.15),0_4px_8px_rgba(0,0,0,0.3),0_16px_32px_rgba(220,38,38,0.3)]"
                     >
                       Join Waitlist
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -726,7 +721,7 @@ export default function Home() {
         <section className="relative w-full overflow-hidden py-24 md:py-32">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-[20%] top-0 h-[600px] w-[600px] rounded-full bg-[#7D9D7A]/4 blur-[150px]" />
-            <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#d14e43]/3 blur-[120px]" />
+            <div className="absolute right-[10%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#DC2626]/3 blur-[120px]" />
           </div>
 
           <div className="container relative mx-auto px-4 md:px-6">
@@ -734,7 +729,7 @@ export default function Home() {
               <div className="mb-16 max-w-3xl">
                 <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
                   Self-hosting MoltBot is{" "}
-                  <span className="text-[#d14e43]">dangerous</span>
+                  <span className="text-[#DC2626]">dangerous</span>
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
                   Without proper security, your bot is an open door for hackers.
@@ -755,7 +750,7 @@ export default function Home() {
                 transition={{ duration: 0.6 }}
               >
                 {/* Hover gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#d14e43]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#DC2626]/5 to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-60" />
 
                 <div className="relative flex h-full flex-col p-8 md:p-10">
                   <div className="mb-8">
@@ -777,7 +772,7 @@ export default function Home() {
                       "No monitoring. You won't know until it's too late",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-3 text-[14px] text-muted-foreground">
-                        <X className="mt-0.5 h-4 w-4 shrink-0 text-[#d14e43]/60" />
+                        <X className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]/60" />
                         {item}
                       </li>
                     ))}
@@ -851,7 +846,7 @@ export default function Home() {
                   <div className="overflow-hidden rounded-[16px] border border-white/[0.06]">
                     {/* Header row */}
                     <div className="grid grid-cols-[1fr_1fr] border-b border-white/[0.06] bg-white/[0.03]">
-                      <div className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#d14e43]/70">Self-hosted</div>
+                      <div className="px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#DC2626]/70">Self-hosted</div>
                       <div className="border-l border-white/[0.06] px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-[#7D9D7A]">PocketMolt</div>
                     </div>
 
@@ -865,7 +860,7 @@ export default function Home() {
                     ].map((row, i) => (
                       <div key={row.self} className={`grid grid-cols-[1fr_1fr] ${i < 4 ? "border-b border-white/[0.04]" : ""}`}>
                         <div className="flex items-center gap-2.5 px-5 py-3.5 text-[13px] text-muted-foreground/50">
-                          <X className="h-3.5 w-3.5 shrink-0 text-[#d14e43]/40" />
+                          <X className="h-3.5 w-3.5 shrink-0 text-[#DC2626]/40" />
                           {row.self}
                         </div>
                         <div className="flex items-center gap-2.5 border-l border-white/[0.06] px-5 py-3.5 text-[13px] font-medium text-foreground/80">
