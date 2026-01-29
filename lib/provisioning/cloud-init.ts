@@ -131,7 +131,7 @@ ${indentCert(caCert)}
       WorkingDirectory=/opt/pocketmolt
       EnvironmentFile=/opt/pocketmolt/env
       ExecStartPre=/opt/pocketmolt/bin/fetch-config.sh
-      ExecStart=/usr/bin/moltbot
+      ExecStart=/usr/bin/clawdbot gateway
       Restart=always
       RestartSec=10
       
@@ -167,7 +167,7 @@ runcmd:
   - mkdir -p /var/log/pocketmolt
   - curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
   - apt-get install -y nodejs
-  - npm install -g moltbot@latest
+  - npm install -g clawdbot@latest
   - mkdir -p /root/.clawdbot
   - /opt/pocketmolt/bin/fetch-config.sh || echo "Config fetch failed, will retry on service start"
   - systemctl daemon-reload
