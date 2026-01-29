@@ -89,17 +89,12 @@ export function rewriteHtmlForProxy(
     var gatewayToken = "${gatewayToken}";
     var wsUrl = (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host + '/ws/bots/${botId}/';
     
-    // Inject settings into localStorage with correct key and structure
+    // Clear old settings and inject fresh ones
     var settingsKey = "clawdbot.control.settings.v1";
-    var existingSettings = {};
-    try {
-      var stored = localStorage.getItem(settingsKey);
-      if (stored) existingSettings = JSON.parse(stored);
-    } catch(e) {}
     
-    var newSettings = Object.assign({}, {
+    var newSettings = {
       gatewayUrl: wsUrl,
-      token: "",
+      token: gatewayToken,
       sessionKey: "main",
       lastActiveSessionKey: "main",
       theme: "system",
@@ -108,14 +103,16 @@ export function rewriteHtmlForProxy(
       splitRatio: 0.6,
       navCollapsed: false,
       navGroupsCollapsed: {}
-    }, existingSettings, {
-      gatewayUrl: wsUrl,
-      token: gatewayToken
-    });
+    };
     
+    // Force overwrite - always use fresh token from server
     localStorage.setItem(settingsKey, JSON.stringify(newSettings));
     
-    // Also rewrite WebSocket URLs to go through our proxy
+    // Also clear device auth to force fresh handshake
+    localStorage.removeItem("clawdbot.device.auth.v1");
+    localStorage.removeItem("clawdbot-device-identity-v1");
+    
+    // Rewrite WebSocket URLs to go through our proxy
     var OriginalWebSocket = window.WebSocket;
     window.WebSocket = function(url, protocols) {
       if (url.includes(':18789') || url.match(/^wss?:\\/\\/[^/]+\\/?$/)) {
