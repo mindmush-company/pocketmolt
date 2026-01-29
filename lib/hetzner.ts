@@ -297,6 +297,7 @@ class HetznerClient {
     const timeout = options?.timeoutMs ?? FIVE_MINUTES_MS
     const interval = options?.intervalMs ?? THREE_SECONDS_MS
     const startTime = Date.now()
+    let sawOff = false
 
     while (Date.now() - startTime < timeout) {
       const { server } = await this.getServer(serverId)
@@ -305,7 +306,19 @@ class HetznerClient {
         return server
       }
 
-      if (server.status === 'off' || server.status === 'unknown') {
+      if (server.status === 'off') {
+        if (!sawOff) {
+          sawOff = true
+          console.log(`Server ${serverId} is off, attempting to power on...`)
+          try {
+            await this.powerOnServer(serverId)
+          } catch (e) {
+            console.warn(`Failed to power on server ${serverId}:`, e)
+          }
+        }
+      }
+
+      if (server.status === 'unknown') {
         throw new Error(`Server entered unexpected status: ${server.status}`)
       }
 
