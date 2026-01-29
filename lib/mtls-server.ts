@@ -21,7 +21,7 @@ export async function createMTLSServer(
       cert: ca.serverCert,
       ca: ca.caCert,
       requestCert: true,
-      rejectUnauthorized: true,
+      rejectUnauthorized: false,
     },
     async (req: MTLSRequest, res) => {
       console.log(`[mTLS] ${req.method} ${req.url}`)
