@@ -234,7 +234,7 @@ ${indentCert(caCert)}
       User=root
       WorkingDirectory=/opt/pocketmolt
       Environment=CLAWDBOT_CONFIG_PATH=/root/.clawdbot/moltbot.json
-      EnvironmentFile=/opt/pocketmolt/env
+      EnvironmentFile=-/opt/pocketmolt/env
       ExecStartPre=/opt/pocketmolt/bin/fetch-config.sh
       ExecStart=/usr/bin/clawdbot gateway --allow-unconfigured
       Restart=always
