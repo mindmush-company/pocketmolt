@@ -86,12 +86,18 @@ export function rewriteHtmlForProxy(
   window.__CLAWDBOT_CONTROL_UI_BASE_PATH__ = "";
   
   (function() {
-    var OriginalWebSocket = window.WebSocket;
+    // Inject gateway token into localStorage (where Control UI reads it from)
     var gatewayToken = "${gatewayToken}";
+    if (gatewayToken) {
+      localStorage.setItem('clawdbot-control-ui:token', gatewayToken);
+    }
+    
+    // Rewrite WebSocket URLs to go through our proxy
+    var OriginalWebSocket = window.WebSocket;
     window.WebSocket = function(url, protocols) {
       if (url.includes(':18789') || url.match(/^wss?:\\/\\/[^/]+\\/?$/)) {
         var proxyUrl = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        url = proxyUrl + '//' + window.location.host + '/ws/bots/${botId}/?token=' + encodeURIComponent(gatewayToken);
+        url = proxyUrl + '//' + window.location.host + '/ws/bots/${botId}/';
       }
       return new OriginalWebSocket(url, protocols);
     };
