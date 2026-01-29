@@ -40,10 +40,16 @@ export type Database = {
           status: 'starting' | 'running' | 'stopped' | 'failed'
           hetzner_server_id: string | null
           private_ip: string | null
-          encrypted_api_key: string
+          encrypted_api_key: string | null
           telegram_bot_token_encrypted: string
           client_cert: string | null
           client_key_encrypted: string | null
+          bot_emoji: string | null
+          bot_theme: string | null
+          primary_model: string | null
+          dm_policy: 'pairing' | 'allowlist' | 'open' | null
+          allow_from: string[] | null
+          setup_completed: boolean | null
           created_at: string
           updated_at: string
         }
@@ -54,10 +60,16 @@ export type Database = {
           status: 'starting' | 'running' | 'stopped' | 'failed'
           hetzner_server_id?: string | null
           private_ip?: string | null
-          encrypted_api_key: string
-          telegram_bot_token_encrypted: string
+          encrypted_api_key?: string | null
+          telegram_bot_token_encrypted?: string
           client_cert?: string | null
           client_key_encrypted?: string | null
+          bot_emoji?: string | null
+          bot_theme?: string | null
+          primary_model?: string | null
+          dm_policy?: 'pairing' | 'allowlist' | 'open' | null
+          allow_from?: string[] | null
+          setup_completed?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -67,10 +79,16 @@ export type Database = {
           status?: 'starting' | 'running' | 'stopped' | 'failed'
           hetzner_server_id?: string | null
           private_ip?: string | null
-          encrypted_api_key?: string
+          encrypted_api_key?: string | null
           telegram_bot_token_encrypted?: string
           client_cert?: string | null
           client_key_encrypted?: string | null
+          bot_emoji?: string | null
+          bot_theme?: string | null
+          primary_model?: string | null
+          dm_policy?: 'pairing' | 'allowlist' | 'open' | null
+          allow_from?: string[] | null
+          setup_completed?: boolean | null
           updated_at?: string
         }
         Relationships: [

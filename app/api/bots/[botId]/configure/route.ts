@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { encrypt } from '@/lib/crypto/encryption'
+import { botConfigSchema } from '@/lib/validation/bot-config'
 
 interface ConfigureRequest {
   anthropicApiKey?: string
   openaiApiKey?: string
   telegramBotToken?: string
+  botEmoji?: string
+  botTheme?: string
+  primaryModel?: string
+  dmPolicy?: 'pairing' | 'allowlist' | 'open'
+  allowFrom?: string[]
+  setupCompleted?: boolean
 }
 
 export async function POST(
@@ -41,7 +48,7 @@ export async function POST(
 
   const body: ConfigureRequest = await request.json()
 
-  const updateData: Record<string, string> = {}
+  const updateData: Record<string, string | boolean | string[] | null> = {}
 
   if (body.anthropicApiKey) {
     const apiKeys = {
@@ -53,6 +60,30 @@ export async function POST(
 
   if (body.telegramBotToken) {
     updateData.telegram_bot_token_encrypted = encrypt(body.telegramBotToken)
+  }
+
+  if (body.botEmoji !== undefined) {
+    updateData.bot_emoji = body.botEmoji
+  }
+
+  if (body.botTheme !== undefined) {
+    updateData.bot_theme = body.botTheme
+  }
+
+  if (body.primaryModel !== undefined) {
+    updateData.primary_model = body.primaryModel
+  }
+
+  if (body.dmPolicy !== undefined) {
+    updateData.dm_policy = body.dmPolicy
+  }
+
+  if (body.allowFrom !== undefined) {
+    updateData.allow_from = body.allowFrom
+  }
+
+  if (body.setupCompleted !== undefined) {
+    updateData.setup_completed = body.setupCompleted
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -95,7 +126,7 @@ export async function GET(
 
   const { data: bot, error: botError } = await supabase
     .from('bots')
-    .select('id, encrypted_api_key, telegram_bot_token_encrypted')
+    .select('id, encrypted_api_key, telegram_bot_token_encrypted, bot_emoji, bot_theme, primary_model, dm_policy, allow_from, setup_completed')
     .eq('id', botId)
     .eq('user_id', user.id)
     .single()
@@ -105,7 +136,13 @@ export async function GET(
   }
 
   return NextResponse.json({
-    hasApiKey: bot.encrypted_api_key !== '',
-    hasTelegramToken: bot.telegram_bot_token_encrypted !== '',
+    hasApiKey: bot.encrypted_api_key !== '' && bot.encrypted_api_key !== null,
+    hasTelegramToken: bot.telegram_bot_token_encrypted !== '' && bot.telegram_bot_token_encrypted !== null,
+    botEmoji: bot.bot_emoji ?? '🤖',
+    botTheme: bot.bot_theme ?? 'helpful',
+    primaryModel: bot.primary_model ?? 'anthropic/claude-sonnet-4-20250514',
+    dmPolicy: bot.dm_policy ?? 'pairing',
+    allowFrom: bot.allow_from ?? [],
+    setupCompleted: bot.setup_completed ?? false,
   })
 }

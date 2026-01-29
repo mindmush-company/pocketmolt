@@ -10,6 +10,7 @@ import { BotConfigForm } from "@/components/dashboard/bot-config-form"
 import { BotHealthStatus } from "@/components/dashboard/bot-health-status"
 import { BotUIEmbed } from "@/components/dashboard/bot-ui-embed"
 import { BotProvisioningStatus } from "@/components/dashboard/bot-provisioning-status"
+import { SetupWizard } from "@/components/dashboard/setup-wizard"
 import { createClient } from "@/lib/supabase/server"
 import { hetzner } from "@/lib/hetzner"
 
@@ -58,10 +59,15 @@ async function getBot(botId: string) {
   return { bot, serverInfo }
 }
 
-function getConfigStatus(bot: { encrypted_api_key: string; telegram_bot_token_encrypted: string }) {
+function getConfigStatus(bot: { 
+  encrypted_api_key: string | null
+  telegram_bot_token_encrypted: string
+  setup_completed: boolean | null 
+}) {
   return {
-    hasApiKey: bot.encrypted_api_key !== '',
+    hasApiKey: bot.encrypted_api_key !== '' && bot.encrypted_api_key !== null,
     hasTelegramToken: bot.telegram_bot_token_encrypted !== '',
+    setupCompleted: bot.setup_completed ?? false,
   }
 }
 
@@ -75,6 +81,34 @@ export default async function BotDetailsPage({ params }: BotDetailsProps) {
 
   const { bot, serverInfo } = data
   const configStatus = getConfigStatus(bot)
+
+  const showSetupWizard = !configStatus.setupCompleted && !configStatus.hasTelegramToken
+
+  if (showSetupWizard) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/dashboard">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h2 className="text-3xl font-bold tracking-tight">Set Up {bot.name}</h2>
+        </div>
+
+        {bot.status === 'starting' && (
+          <BotProvisioningStatus
+            botId={bot.id}
+            botName={bot.name}
+            initialStatus={bot.status}
+            createdAt={bot.created_at}
+          />
+        )}
+
+        <SetupWizard botId={bot.id} botName={bot.name} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -156,6 +190,9 @@ export default async function BotDetailsPage({ params }: BotDetailsProps) {
           botId={bot.id}
           hasApiKey={configStatus.hasApiKey}
           hasTelegramToken={configStatus.hasTelegramToken}
+          initialEmoji={bot.bot_emoji ?? '🤖'}
+          initialTheme={bot.bot_theme ?? 'helpful'}
+          initialDmPolicy={bot.dm_policy ?? 'pairing'}
         />
 
         <BotHealthStatus botId={bot.id} botStatus={bot.status} />
