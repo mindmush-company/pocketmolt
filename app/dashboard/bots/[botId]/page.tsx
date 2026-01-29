@@ -9,6 +9,7 @@ import { BotActions } from "@/components/dashboard/bot-actions"
 import { BotConfigForm } from "@/components/dashboard/bot-config-form"
 import { BotHealthStatus } from "@/components/dashboard/bot-health-status"
 import { BotUIEmbed } from "@/components/dashboard/bot-ui-embed"
+import { BotProvisioningStatus } from "@/components/dashboard/bot-provisioning-status"
 import { createClient } from "@/lib/supabase/server"
 import { hetzner } from "@/lib/hetzner"
 
@@ -91,6 +92,15 @@ export default async function BotDetailsPage({ params }: BotDetailsProps) {
           {bot.status}
         </Badge>
       </div>
+
+      {bot.status === 'starting' && (
+        <BotProvisioningStatus
+          botId={bot.id}
+          botName={bot.name}
+          initialStatus={bot.status}
+          createdAt={bot.created_at}
+        />
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

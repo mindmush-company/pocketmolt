@@ -2,6 +2,8 @@
 
 A managed hosting platform that lets non-technical users deploy and run [MoltBot](https://www.molt.bot/) instances without needing to understand servers, Docker, or command lines.
 
+Packages are installed with `pnpm`, and supabase can be used with `pnpx supabase`.
+
 ## What is MoltBot?
 
 MoltBot is an open-source personal AI assistant that:
@@ -301,13 +303,13 @@ supabase gen types typescript --local > lib/supabase/database.types.ts
 
 ### Step 1: Initialize Certificate Authority
 ```bash
-npx tsx scripts/init-ca.ts
+pnpm tsx scripts/init-ca.ts
 ```
 Creates mTLS CA and stores encrypted in database.
 
 ### Step 2: Provision Backend Server
 ```bash
-npx tsx scripts/provision-backend.ts
+pnpm tsx scripts/provision-backend.ts
 ```
 Creates Hetzner VPS at `10.0.0.2` with Docker installed.
 
@@ -331,8 +333,8 @@ docker compose restart nginx
 - [ ] Generate ENCRYPTION_KEY (64 hex chars)
 - [ ] Generate SSH keypair
 - [ ] Update .env.production with all secrets
-- [ ] Run `npx tsx scripts/init-ca.ts`
-- [ ] Run `npx tsx scripts/provision-backend.ts`
+- [ ] Run `pnpm tsx scripts/init-ca.ts`
+- [ ] Run `pnpm tsx scripts/provision-backend.ts`
 - [ ] Deploy with `docker compose up -d`
 - [ ] Configure SSL with certbot
 - [ ] Test checkout flow end-to-end
