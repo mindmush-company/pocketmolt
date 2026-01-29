@@ -273,7 +273,7 @@ runcmd:
   - mkdir -p /var/log/pocketmolt
   - mkdir -p /root/clawd${natRoutingCommands}
   - curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
-  - apt-get install -y nodejs
+  - apt-get install -y nodejs jq
   - npm install -g clawdbot@latest
   - mkdir -p /root/.clawdbot
   - /opt/pocketmolt/bin/fetch-config.sh || echo "Config fetch failed, will retry on service start"
