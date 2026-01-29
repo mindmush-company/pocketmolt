@@ -165,7 +165,7 @@ runcmd:
   - mkdir -p /opt/pocketmolt/certs
   - mkdir -p /opt/pocketmolt/bin
   - mkdir -p /var/log/pocketmolt
-  - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  - curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
   - apt-get install -y nodejs
   - npm install -g moltbot@latest
   - mkdir -p /root/.clawdbot
