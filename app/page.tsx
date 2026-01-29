@@ -558,7 +558,7 @@ export default function Home() {
   const heroY = useTransform(heroScroll, [0, 0.7], [0, -80])
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 w-full border-b border-white/[0.04] bg-black/80 backdrop-blur-xl [box-shadow:0_1px_0_rgba(255,255,255,0.03)]">
         <div className="container flex h-16 items-center justify-between">
