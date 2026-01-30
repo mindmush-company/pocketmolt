@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Loader2, ArrowLeft, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { AsciiQrCanvas } from './ascii-qr-canvas'
 
 interface StepWhatsAppProps {
   botId: string
@@ -137,10 +138,8 @@ export function StepWhatsApp({ botId, onComplete, onBack }: StepWhatsAppProps) {
 
         {state === 'qr' && (
           <div className="space-y-6 w-full flex flex-col items-center">
-            <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
-              <pre className="font-mono text-[8px] leading-[8px] select-all bg-white text-black whitespace-pre">
-                {qrCode}
-              </pre>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <AsciiQrCanvas asciiQr={qrCode} pixelSize={3} />
             </div>
             
             <div className="space-y-2 text-sm text-muted-foreground max-w-xs mx-auto text-left">
