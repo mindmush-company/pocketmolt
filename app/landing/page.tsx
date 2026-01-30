@@ -455,26 +455,27 @@ function PhoneWaitlistUI() {
       </div>
 
       {/* Email input + button */}
-      <div className="w-full space-y-2.5 pb-3">
+      <div className="w-full space-y-2 pb-3">
         {status === "success" ? (
           <div className="flex flex-col items-center gap-3 py-4">
             <CheckCircle className="h-6 w-6 text-[#A855F7]" />
             <p className="text-[14px] font-semibold text-white/90">You&apos;re on the list!</p>
+            <p className="text-[11px] text-white/30">We&apos;ll let you know when it&apos;s your turn.</p>
           </div>
         ) : (
           <>
             <input
               type="email"
-              placeholder="you@email.com"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="your@email.com"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value)
                 if (status === "error" || status === "rate-limited") setStatus("idle")
               }}
-              onFocus={(e) => {
-                setTimeout(() => {
-                  e.target.scrollIntoView({ behavior: "smooth", block: "center" })
-                }, 300)
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && email && consent) handleSubmit()
               }}
               className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[16px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
             />
@@ -489,36 +490,141 @@ function PhoneWaitlistUI() {
               aria-hidden="true"
               style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0 }}
             />
-            <button
-              onClick={handleSubmit}
-              disabled={status === "loading" || !consent}
-              className="w-full rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-3 text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-40 [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
-            >
-              {status === "loading" ? "Joining..." : "Join Waitlist"}
-            </button>
-            {/* GDPR consent */}
-            <label className="flex items-start gap-2 cursor-pointer">
+            {(status === "error" || status === "rate-limited") && (
+              <p className="text-center text-[10px] text-red-400">{errorMsg}</p>
+            )}
+            {/* GDPR consent — before button */}
+            <label className="flex items-start gap-2 cursor-pointer py-0.5">
               <input
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
                 className="mt-0.5 h-3 w-3 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
               />
-              <span className="text-[10px] leading-snug text-white/25">
-                I agree to the{" "}
-                <a href="/terms" target="_blank" className="underline hover:text-white/40">Terms</a>{" "}
-                and to receive updates.
+              <span className="text-[10px] leading-snug text-white/30">
+                I agree to receive updates. No spam, unsubscribe anytime.
               </span>
             </label>
+            <button
+              onClick={handleSubmit}
+              disabled={status === "loading" || !email || !consent}
+              className="w-full rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-3 text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
+            >
+              {status === "loading" ? "Joining..." : "Join Waitlist"}
+            </button>
           </>
-        )}
-        {(status === "error" || status === "rate-limited") && (
-          <p className="text-center text-[10px] text-red-400">{errorMsg}</p>
         )}
         <p className="text-center text-[10px] tracking-wide text-white/15">
           1,000 spots &middot; first come, first serve
         </p>
       </div>
+    </div>
+  )
+}
+
+/* ─── Standalone Waitlist Form ─── */
+function StandaloneWaitlist() {
+  const [email, setEmail] = useState("")
+  const [consent, setConsent] = useState(false)
+  const [honeypot, setHoneypot] = useState("")
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error" | "rate-limited">("idle")
+  const [errorMsg, setErrorMsg] = useState("")
+
+  const handleSubmit = async () => {
+    if (!email || !consent) return
+    setStatus("loading")
+    setErrorMsg("")
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, consent, website: honeypot }),
+      })
+      if (res.ok) {
+        setStatus("success")
+        setEmail("")
+      } else {
+        const data = await res.json().catch(() => ({}))
+        if (res.status === 429) {
+          setStatus("rate-limited")
+          setErrorMsg(data.error ?? "Too many requests. Try again later.")
+        } else {
+          setStatus("error")
+          setErrorMsg(data.error ?? "Something went wrong. Try again.")
+        }
+      }
+    } catch {
+      setStatus("error")
+      setErrorMsg("Something went wrong. Try again.")
+    }
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-md">
+      {status === "success" ? (
+        <motion.div
+          className="flex flex-col items-center gap-3 rounded-2xl border border-[#A855F7]/20 bg-[#A855F7]/[0.04] px-6 py-8"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <CheckCircle className="h-8 w-8 text-[#A855F7]" />
+          <p className="text-lg font-semibold text-foreground">You&apos;re on the list!</p>
+          <p className="text-sm text-muted-foreground">We&apos;ll notify you when your spot opens.</p>
+        </motion.div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (status === "error" || status === "rate-limited") setStatus("idle")
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && email && consent) handleSubmit()
+              }}
+              className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3.5 text-[16px] text-foreground placeholder:text-muted-foreground/40 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={status === "loading" || !email || !consent}
+              className="shrink-0 rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] px-6 py-3.5 text-[15px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] hover:[box-shadow:0_0_0_1px_rgba(168,85,247,0.6),0_6px_24px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]"
+            >
+              {status === "loading" ? "Joining..." : "Join Waitlist"}
+            </button>
+          </div>
+          {/* Honeypot */}
+          <input
+            type="text"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0 }}
+          />
+          {(status === "error" || status === "rate-limited") && (
+            <p className="text-sm text-red-400">{errorMsg}</p>
+          )}
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
+            />
+            <span className="text-[13px] leading-snug text-muted-foreground/60">
+              I agree to receive updates about PocketMolt. No spam, unsubscribe anytime.
+            </span>
+          </label>
+        </div>
+      )}
     </div>
   )
 }
@@ -1049,40 +1155,40 @@ export default function Home() {
       </main>
 
       {/* ── Footer CTA ── */}
-      <footer id="waitlist" className="relative flex min-h-[800px] flex-col items-center overflow-hidden bg-background pt-[120px] pb-20 max-md:min-h-0 max-md:pt-20">
-        {/* Glow behind phone */}
-        <div className="pointer-events-none absolute left-1/2 top-[55%] h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[100px]" />
+      <footer id="waitlist" className="relative flex flex-col items-center overflow-hidden bg-background pt-24 pb-20 md:pt-32">
+        {/* Glow */}
+        <div className="pointer-events-none absolute left-1/2 top-[40%] h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[120px]" />
 
         {/* Headline */}
-        <motion.h2
-          className="font-display relative z-10 mx-auto max-w-[800px] px-4 text-center text-[2.5rem] font-extrabold leading-[1.1] tracking-tighter text-foreground sm:text-5xl md:text-[4rem] lg:text-[5rem]"
+        <motion.div
+          className="relative z-10 mx-auto max-w-[600px] px-4 text-center"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true }}
         >
-          Get Your MoltBot Running
-        </motion.h2>
+          <h2 className="font-display text-[2.5rem] font-extrabold leading-[1.1] tracking-tighter text-foreground sm:text-5xl md:text-[4rem]">
+            Get Your MoltBot Running
+          </h2>
+          <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+            Join the waitlist and be first in line when we launch. Limited to 1,000 early users.
+          </p>
+        </motion.div>
 
-        {/* iPhone Mockup */}
+        {/* Standalone waitlist form */}
         <motion.div
-          className="relative z-10 mt-16"
-          initial={{ opacity: 0, y: 50 }}
+          className="relative z-10 mt-10 w-full px-4"
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.6, delay: 0.2 }}
           viewport={{ once: true }}
         >
-          <motion.div
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <IPhoneMockup className="mx-auto w-[260px] md:w-[300px]" />
-          </motion.div>
+          <StandaloneWaitlist />
         </motion.div>
 
         {/* Social Links */}
         <motion.div
-          className="relative z-10 mt-12 flex items-center gap-8"
+          className="relative z-10 mt-16 flex items-center gap-8"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
