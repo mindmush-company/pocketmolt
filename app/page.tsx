@@ -74,9 +74,9 @@ export default function Home() {
             <Card className="flex flex-col justify-between border-none shadow-md">
               <CardHeader>
                 <Shield className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Your Own API Keys</CardTitle>
+                <CardTitle>Flexible AI Access</CardTitle>
                 <CardDescription>
-                  Maintain full control and privacy. Bring your own Anthropic or OpenAI keys. You pay only for what you use.
+                  Use our built-in credits or bring your own API keys — it&apos;s your choice. Full control, zero lock-in.
                 </CardDescription>
               </CardHeader>
             </Card>

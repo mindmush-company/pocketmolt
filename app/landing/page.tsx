@@ -794,7 +794,7 @@ export default function Home() {
                   self-host?
                 </h2>
                 <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                  Because one wrong config and your bot is wide open. Leaked API keys,
+                  Because one wrong config and your bot is wide open. Leaked secrets,
                   no firewall, no encryption. Most people find out they were hacked
                   weeks after it happened.
                 </p>
@@ -920,7 +920,7 @@ export default function Home() {
                       { self: "Open to the internet", pocket: "Locked down by default" },
                       { self: "You find out after the hack", pocket: "Alerts before damage" },
                       { self: "Hours of manual setup", pocket: "Live in minutes" },
-                      { self: "Keys in plaintext files", pocket: "Secrets vault, encrypted" },
+                      { self: "Keys in plaintext files", pocket: "Encrypted vault — or skip keys entirely" },
                       { self: "No prompt injection defense", pocket: "Built-in injection filtering" },
                     ].map((row, i, arr) => (
                       <div key={row.self} className={`grid grid-cols-[1fr_1fr] ${i < arr.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
@@ -965,7 +965,7 @@ export default function Home() {
             <div className="grid gap-8 sm:grid-cols-2">
               <SecurityCard icon={Lock} title="Verified connections only" description="Both sides of every connection prove their identity with certificates. Impersonation and interception are impossible." delay={0} />
               <SecurityCard icon={Network} title="Locked down by default" description="All external access is blocked unless explicitly allowed. Only authorized traffic reaches your bot." delay={0.1} />
-              <SecurityCard icon={Database} title="Nothing stored in plaintext" description="Your database, configs, and API keys are encrypted at every layer. No gaps, no exceptions." delay={0.15} />
+              <SecurityCard icon={Database} title="Nothing stored in plaintext" description="Your database, configs, and any API keys you add are encrypted at every layer. No gaps, no exceptions." delay={0.15} />
               <SecurityCard icon={ShieldAlert} title="Prompt injection defense" description="Malicious prompts designed to hijack your bot are detected and blocked before they reach the model. Your bot only follows your rules." delay={0.2} />
               <SecurityCard icon={KeyRound} title="Protected at rest & in motion" description="AES-256 for stored data, TLS 1.3 for data in transit. Your information is safe whether it's sitting still or moving." delay={0.25} />
             </div>
@@ -1035,7 +1035,7 @@ export default function Home() {
               {[
                 { q: "What exactly is PocketMolt?", a: "PocketMolt is an app that deploys and runs your MoltBot for you. You sign up, configure your bot, and you're live — fully hosted, secured, and monitored. No servers, no terminal, no maintenance. API keys are optional — you can use yours or ours." },
                 { q: "Do I need any technical knowledge?", a: "None. The entire setup happens through a simple dashboard. No terminal, no config files, no coding required." },
-                { q: "Is my data safe?", a: "Yes. Everything is encrypted — your keys, your data, your traffic. We also have built-in prompt injection filtering to stop malicious inputs from hijacking your bot. We use the same security standards as banks and enterprise software, and a dedicated cybersecurity expert monitors every deployment." },
+                { q: "Is my data safe?", a: "Yes. Everything is encrypted — your data, your traffic, and any API keys you choose to add. We also have built-in prompt injection filtering to stop malicious inputs from hijacking your bot. We use the same security standards as banks and enterprise software, and a dedicated cybersecurity expert monitors every deployment." },
                 { q: "What happens after I join the waitlist?", a: "When your spot opens, you get instant access to deploy your MoltBot. The initial launch is limited to 1,000 users so we can guarantee quality for everyone." },
                 { q: "I already self-host MoltBot. Can I switch?", a: "Yes. We built a migration path that moves your configs and data over securely. You keep everything, just without the maintenance burden." },
                 { q: "What will it cost?", a: "Pricing will be announced at launch. Everyone on the waitlist gets early-bird pricing locked in." },
