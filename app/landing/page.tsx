@@ -657,9 +657,10 @@ export default function Home() {
       <header className="sticky top-0 z-50 w-full border-b border-white/[0.04] bg-black/80 backdrop-blur-xl [box-shadow:0_1px_0_rgba(255,255,255,0.03)]">
         <div className="container flex h-16 items-center justify-between">
           <a
-            className="flex cursor-pointer items-center"
+            className="flex cursor-pointer items-center gap-2"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
+            <img src="/images/logo.svg" alt="PocketMolt logo" className="h-7 w-7 rounded-md" />
             <span className="font-display text-lg font-semibold">PocketMolt</span>
           </a>
           <div className="flex items-center gap-1 md:gap-2">
