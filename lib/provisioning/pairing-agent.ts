@@ -109,14 +109,32 @@ server.on('upgrade', (req, socket, head) => {
   ].join('\\r\\n'));
   
   log('WebSocket connection established, starting pairing...');
-  sendWs(socket, 'status', { message: 'Configuring WhatsApp channel...' });
+  sendWs(socket, 'status', { message: 'Checking WhatsApp connection status...' });
   
   const env = { ...process.env, CLAWDBOT_CONFIG_PATH: '/root/.clawdbot/moltbot.json' };
   
-  // First, add the WhatsApp channel (idempotent - safe to run multiple times)
-  const addChannel = spawn('clawdbot', ['channels', 'add', '--channel', 'whatsapp'], { env });
+  const checkStatus = spawn('clawdbot', ['channels', 'list'], { env });
+  let statusOutput = '';
   
-  addChannel.on('close', (addCode) => {
+  checkStatus.stdout.on('data', (data) => {
+    statusOutput += data.toString();
+  });
+  
+  checkStatus.on('close', (checkCode) => {
+    log(\`channels list exited with code \${checkCode}: \${statusOutput.substring(0, 200)}\`);
+    
+    if (statusOutput.toLowerCase().includes('whatsapp') && statusOutput.toLowerCase().includes('linked')) {
+      log('WhatsApp already paired, notifying client');
+      sendWs(socket, 'paired', { success: true, alreadyPaired: true });
+      socket.end();
+      return;
+    }
+    
+    sendWs(socket, 'status', { message: 'Configuring WhatsApp channel...' });
+  
+    const addChannel = spawn('clawdbot', ['channels', 'add', '--channel', 'whatsapp'], { env });
+  
+    addChannel.on('close', (addCode) => {
     log(\`channels add exited with code \${addCode}\`);
     
     if (addCode !== 0) {
@@ -202,6 +220,7 @@ server.on('upgrade', (req, socket, head) => {
     socket.on('error', (err) => {
       log(\`Socket error: \${err.message}\`);
       child.kill();
+    });
     });
   });
 });
