@@ -18,9 +18,10 @@ interface BotHealthStatus {
 interface BotHealthStatusProps {
   botId: string
   botStatus: string
+  variant?: 'card' | 'inline'
 }
 
-export function BotHealthStatus({ botId, botStatus }: BotHealthStatusProps) {
+export function BotHealthStatus({ botId, botStatus, variant = 'card' }: BotHealthStatusProps) {
   const [health, setHealth] = useState<BotHealthStatus | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,6 +81,45 @@ export function BotHealthStatus({ botId, botStatus }: BotHealthStatusProps) {
       case 'unreachable':
         return 'text-red-600 dark:text-red-400'
     }
+  }
+
+  if (variant === 'inline') {
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-1.5">
+          {health?.status === 'healthy' ? (
+            <span className="flex h-2 w-2 rounded-full bg-green-500" />
+          ) : health?.status === 'unhealthy' ? (
+             <span className="flex h-2 w-2 rounded-full bg-yellow-500" />
+          ) : (
+             <span className="flex h-2 w-2 rounded-full bg-red-500" />
+          )}
+          
+          <span className={`font-medium ${getStatusColor()}`}>
+            {health?.status === 'healthy' ? 'Healthy' : 
+             health?.status === 'unhealthy' ? 'Unhealthy' : 
+             health?.status === 'unreachable' ? 'Unreachable' : 'Checking...'}
+          </span>
+        </div>
+        
+        {health && (
+           <span className="text-muted-foreground hidden sm:inline">
+             (Gateway {health.gateway ? 'connected' : 'disconnected'}, uptime {health.uptime || '0m'})
+           </span>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={fetchHealth}
+          disabled={isLoading}
+          className="h-6 w-6 ml-1"
+        >
+           <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+           <span className="sr-only">Refresh Health</span>
+        </Button>
+      </div>
+    )
   }
 
   return (
