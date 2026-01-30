@@ -1007,8 +1007,8 @@ export default function Home() {
               />
               <TeamCard
                 name="Youssef"
-                role="Role"
-                bio="Replace this with a short bio about Youssef and their contribution."
+                role="Developer"
+                bio="Builds and ships the platform that powers PocketMolt — from frontend to infrastructure."
                 image="/team/youssef.jpeg"
                 socials={{ x: "https://x.com/Sronds" }}
                 delay={0.2}
