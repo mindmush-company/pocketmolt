@@ -14,6 +14,10 @@ interface MoltBotConfig {
     telegram?: {
       botToken: string
     }
+    whatsapp?: {
+      enabled: boolean
+      dmPolicy: string
+    }
   }
   proxy?: {
     baseUrl: string
@@ -49,7 +53,7 @@ export async function handleConfigRequest(
     const supabase = createAdminClient() as any
     const { data: bot, error } = await supabase
       .from('bots')
-      .select('id, encrypted_api_key, telegram_bot_token_encrypted, private_ip, gateway_token_encrypted, litellm_key_encrypted, primary_model')
+      .select('id, encrypted_api_key, telegram_bot_token_encrypted, private_ip, gateway_token_encrypted, litellm_key_encrypted, primary_model, channel_type, dm_policy')
       .eq('id', botId)
       .single()
 
@@ -81,9 +85,16 @@ export async function handleConfigRequest(
       }
     }
 
-    if (bot.telegram_bot_token_encrypted) {
+    if (bot.telegram_bot_token_encrypted && bot.channel_type !== 'whatsapp') {
       config.channels.telegram = {
         botToken: decrypt(bot.telegram_bot_token_encrypted),
+      }
+    }
+
+    if (bot.channel_type === 'whatsapp') {
+      config.channels.whatsapp = {
+        enabled: true,
+        dmPolicy: bot.dm_policy || 'open',
       }
     }
 

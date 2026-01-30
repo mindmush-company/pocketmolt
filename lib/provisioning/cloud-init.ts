@@ -1,4 +1,5 @@
 import { BACKEND_IP } from './network'
+import { generatePairingAgentScript } from './pairing-agent'
 
 const CONFIG_API_PORT = 8443
 
@@ -115,6 +116,8 @@ ${indentCert(caCert)}
       fi
       
       TELEGRAM_TOKEN=$(echo "$RESPONSE" | jq -r '.channels.telegram.botToken // empty')
+      WHATSAPP_ENABLED=$(echo "$RESPONSE" | jq -r '.channels.whatsapp.enabled // false')
+      WHATSAPP_DM_POLICY=$(echo "$RESPONSE" | jq -r '.channels.whatsapp.dmPolicy // "open"')
       MODEL=$(echo "$RESPONSE" | jq -r '.agent.model // "anthropic/claude-sonnet-4-20250514"')
       GATEWAY_TOKEN=$(echo "$RESPONSE" | jq -r '.gatewayToken // empty')
       
@@ -125,9 +128,31 @@ ${indentCert(caCert)}
       
       mkdir -p "$(dirname "$MOLTBOT_CONFIG")"
       
-      if [ -n "$PROXY_BASE_URL" ] && [ -n "$PROXY_API_KEY" ]; then
-        # Use LiteLLM proxy - set via environment variable
-        cat > "$MOLTBOT_CONFIG" <<MOLTEOF
+      # Build channels config based on what's enabled
+      if [ "$WHATSAPP_ENABLED" = "true" ]; then
+        CHANNELS_CONFIG=$(cat <<CHANEOF
+        "whatsapp": {
+          "enabled": true,
+          "dmPolicy": "$WHATSAPP_DM_POLICY",
+          "allowFrom": ["*"]
+        }
+CHANEOF
+)
+      elif [ -n "$TELEGRAM_TOKEN" ]; then
+        CHANNELS_CONFIG=$(cat <<CHANEOF
+        "telegram": {
+          "enabled": true,
+          "dmPolicy": "open",
+          "allowFrom": ["*"],
+          "botToken": "$TELEGRAM_TOKEN"
+        }
+CHANEOF
+)
+      else
+        CHANNELS_CONFIG=""
+      fi
+      
+      cat > "$MOLTBOT_CONFIG" <<MOLTEOF
       {
         "agents": {
           "defaults": {
@@ -137,10 +162,7 @@ ${indentCert(caCert)}
           }
         },
         "channels": {
-          "telegram": {
-            "enabled": true,
-            "botToken": "$TELEGRAM_TOKEN"
-          }
+$CHANNELS_CONFIG
         },
         "gateway": {
           "mode": "local",
@@ -156,39 +178,11 @@ ${indentCert(caCert)}
         }
       }
       MOLTEOF
+      
+      if [ -n "$PROXY_BASE_URL" ] && [ -n "$PROXY_API_KEY" ]; then
         echo "ANTHROPIC_API_KEY=$PROXY_API_KEY" > /opt/pocketmolt/env
         echo "ANTHROPIC_BASE_URL=$PROXY_BASE_URL" >> /opt/pocketmolt/env
       else
-        # Use direct Anthropic API key
-        cat > "$MOLTBOT_CONFIG" <<MOLTEOF
-      {
-        "agents": {
-          "defaults": {
-            "model": {
-              "primary": "$MODEL"
-            }
-          }
-        },
-        "channels": {
-          "telegram": {
-            "enabled": true,
-            "botToken": "$TELEGRAM_TOKEN"
-          }
-        },
-        "gateway": {
-          "mode": "local",
-          "bind": "lan",
-          "port": 18789,
-          "auth": {
-            "mode": "token"
-          },
-          "controlUi": {
-            "allowInsecureAuth": true
-          },
-          "trustedProxies": ["${BACKEND_IP}"]
-        }
-      }
-      MOLTEOF
         echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY" > /opt/pocketmolt/env
       fi
       
@@ -241,6 +235,31 @@ ${indentCert(caCert)}
       else
         echo "Gateway: unreachable"
       fi
+
+  - path: /opt/pocketmolt/bin/pairing-agent.js
+    permissions: '0755'
+    content: |
+${generatePairingAgentScript().split('\n').map(line => '      ' + line).join('\n')}
+
+  - path: /etc/systemd/system/pocketmolt-pairing.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=PocketMolt WhatsApp Pairing Agent
+      After=network.target
+      
+      [Service]
+      Type=simple
+      User=root
+      WorkingDirectory=/opt/pocketmolt
+      Environment=CLAWDBOT_CONFIG_PATH=/root/.clawdbot/moltbot.json
+      EnvironmentFile=-/opt/pocketmolt/env
+      ExecStart=/usr/bin/node /opt/pocketmolt/bin/pairing-agent.js
+      Restart=always
+      RestartSec=5
+      
+      [Install]
+      WantedBy=multi-user.target
 ${natRoutingFiles}
 runcmd:
   - mkdir -p /opt/pocketmolt/certs
@@ -254,7 +273,9 @@ runcmd:
   - /opt/pocketmolt/bin/fetch-config.sh || echo "Config fetch failed, will retry on service start"
   - systemctl daemon-reload
   - systemctl enable pocketmolt-bot
+  - systemctl enable pocketmolt-pairing
   - systemctl start pocketmolt-bot
+  - systemctl start pocketmolt-pairing
   - echo "MoltBot provisioning complete at \\$(date)" >> /var/log/pocketmolt/init.log
 
 final_message: "PocketMolt server provisioned successfully for bot ${botName}"

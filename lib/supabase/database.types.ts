@@ -41,7 +41,7 @@ export type Database = {
           hetzner_server_id: string | null
           private_ip: string | null
           encrypted_api_key: string | null
-          telegram_bot_token_encrypted: string
+          telegram_bot_token_encrypted: string | null
           client_cert: string | null
           client_key_encrypted: string | null
           bot_emoji: string | null
@@ -51,6 +51,8 @@ export type Database = {
           allow_from: string[] | null
           setup_completed: boolean | null
           litellm_key_encrypted: string | null
+          channel_type: 'telegram' | 'whatsapp' | 'none'
+          whatsapp_connected_at: string | null
           created_at: string
           updated_at: string
         }
@@ -62,7 +64,7 @@ export type Database = {
           hetzner_server_id?: string | null
           private_ip?: string | null
           encrypted_api_key?: string | null
-          telegram_bot_token_encrypted?: string
+          telegram_bot_token_encrypted?: string | null
           client_cert?: string | null
           client_key_encrypted?: string | null
           bot_emoji?: string | null
@@ -72,6 +74,8 @@ export type Database = {
           allow_from?: string[] | null
           setup_completed?: boolean | null
           litellm_key_encrypted?: string | null
+          channel_type?: 'telegram' | 'whatsapp' | 'none'
+          whatsapp_connected_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -92,6 +96,8 @@ export type Database = {
           allow_from?: string[] | null
           setup_completed?: boolean | null
           litellm_key_encrypted?: string | null
+          channel_type?: 'telegram' | 'whatsapp' | 'none'
+          whatsapp_connected_at?: string | null
           updated_at?: string
         }
         Relationships: [

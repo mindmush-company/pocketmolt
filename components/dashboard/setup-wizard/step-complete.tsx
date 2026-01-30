@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 interface StepCompleteProps {
   botId: string
   botName: string
+  channelType: 'telegram' | 'whatsapp' | 'none'
   telegramUsername?: string
   emoji: string
   theme: string
@@ -19,6 +20,7 @@ interface StepCompleteProps {
 export function StepComplete({
   botId,
   botName,
+  channelType,
   telegramUsername,
   emoji,
   theme,
@@ -39,7 +41,8 @@ export function StepComplete({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          telegramBotToken: telegramToken,
+          telegramBotToken: channelType === 'telegram' ? telegramToken : undefined,
+          channelType,
           botEmoji: emoji,
           botTheme: theme,
           dmPolicy,
@@ -78,10 +81,22 @@ export function StepComplete({
             <dt className="text-muted-foreground">Bot Name</dt>
             <dd className="font-medium">{botName}</dd>
           </div>
-          {telegramUsername && (
+          {telegramUsername && channelType === 'telegram' && (
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Telegram</dt>
               <dd className="font-medium">@{telegramUsername}</dd>
+            </div>
+          )}
+          {channelType === 'whatsapp' && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">WhatsApp</dt>
+              <dd className="font-medium text-green-600 dark:text-green-400">Connected</dd>
+            </div>
+          )}
+          {channelType === 'none' && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Channel</dt>
+              <dd className="font-medium text-muted-foreground">Not configured</dd>
             </div>
           )}
           <div className="flex justify-between">
@@ -100,7 +115,9 @@ export function StepComplete({
         <div className="text-sm">
           <p className="font-medium">What happens next?</p>
           <p className="text-muted-foreground">
-            Your bot will start and connect to Telegram. You can message it directly to start a conversation!
+            {channelType === 'telegram' && 'Your bot will start and connect to Telegram. You can message it directly to start a conversation!'}
+            {channelType === 'whatsapp' && 'Your bot is connected to WhatsApp. Send a message from your phone to start chatting!'}
+            {channelType === 'none' && 'Your bot will start but won\'t be connected to any messaging platform yet. You can configure this later.'}
           </p>
         </div>
       </div>

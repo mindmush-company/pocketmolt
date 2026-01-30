@@ -8,6 +8,7 @@ interface ConfigureRequest {
   anthropicApiKey?: string
   openaiApiKey?: string
   telegramBotToken?: string
+  channelType?: 'telegram' | 'whatsapp' | 'none'
   botEmoji?: string
   botTheme?: string
   primaryModel?: string
@@ -82,6 +83,10 @@ export async function POST(
     updateData.allow_from = body.allowFrom
   }
 
+  if (body.channelType !== undefined) {
+    updateData.channel_type = body.channelType
+  }
+
   if (body.setupCompleted !== undefined) {
     updateData.setup_completed = body.setupCompleted
   }
@@ -126,7 +131,7 @@ export async function GET(
 
   const { data: bot, error: botError } = await supabase
     .from('bots')
-    .select('id, encrypted_api_key, telegram_bot_token_encrypted, bot_emoji, bot_theme, primary_model, dm_policy, allow_from, setup_completed')
+    .select('id, encrypted_api_key, telegram_bot_token_encrypted, bot_emoji, bot_theme, primary_model, dm_policy, allow_from, setup_completed, channel_type, whatsapp_connected_at')
     .eq('id', botId)
     .eq('user_id', user.id)
     .single()
@@ -144,5 +149,7 @@ export async function GET(
     dmPolicy: bot.dm_policy ?? 'pairing',
     allowFrom: bot.allow_from ?? [],
     setupCompleted: bot.setup_completed ?? false,
+    channelType: bot.channel_type ?? 'telegram',
+    whatsappConnectedAt: bot.whatsapp_connected_at,
   })
 }
