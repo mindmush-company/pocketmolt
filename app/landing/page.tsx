@@ -994,7 +994,7 @@ export default function Home() {
                 role="Founder"
                 bio="Obsessed with making MoltBot deployment something anyone can do — no tech skills needed."
                 image="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop&crop=face"
-                socials={{ linkedin: "#", x: "#" }}
+                socials={{ x: "https://x.com/rafkramer" }}
                 delay={0}
               />
               <TeamCard
