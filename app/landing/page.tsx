@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { motion, useScroll, useTransform, useInView } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -112,26 +112,25 @@ function FAQItem({ question, answer, delay = 0 }: { question: string; answer: st
       transition={{ duration: 0.4, delay }}
     >
       <button
+        type="button"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="flex w-full items-center justify-between gap-4 py-5 text-left"
       >
         <span className="text-[16px] font-medium text-foreground">{question}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
       </button>
-      <motion.div
-        initial={false}
-        animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
-        transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
-        className="overflow-hidden"
+      <div
+        className="grid transition-all duration-300 ease-[cubic-bezier(0.25,0.4,0.25,1)]"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
-        <p className="pb-5 text-[15px] leading-relaxed text-muted-foreground">{answer}</p>
-      </motion.div>
+        <div className="overflow-hidden">
+          <p className={`pb-5 text-[15px] leading-relaxed text-muted-foreground transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0"}`}>{answer}</p>
+        </div>
+      </div>
     </motion.div>
   )
 }
-
-/* ─── Live threat counter ─── */
-
 
 /* ─── Security Feature Card ─── */
 function SecurityCard({
@@ -279,10 +278,10 @@ function TeamCard({
   delay?: number
 }) {
   return (
-    <Reveal delay={delay} className="h-full min-w-[290px] snap-center">
+    <Reveal delay={delay} className="h-full min-w-[290px] md:min-w-0 snap-center">
       <div className="group relative flex h-full flex-col overflow-hidden rounded-[16px] border border-white/[0.08] bg-gradient-to-b from-white/[0.07] to-white/[0.03] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[2px] hover:border-white/[0.12] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_1px_2px_rgba(0,0,0,0.4),0_4px_8px_rgba(0,0,0,0.2)]">
         {/* Portrait */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
+        <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
           {image ? (
             <img src={image} alt={name} loading="lazy" className="h-full w-full object-cover object-top" />
           ) : (
@@ -346,7 +345,7 @@ function IPhoneMockup({ className = "" }: { className?: string }) {
         <div className="rounded-[53.5px] bg-gradient-to-b from-[#222225] to-[#161618] p-[2px]">
           <div className="rounded-[51.5px] bg-[#1A1A1E] p-[9px]">
             {/* Screen */}
-            <div className="relative flex aspect-[9/19.5] flex-col items-center overflow-hidden rounded-[43px] bg-[#050507]">
+            <div className="relative flex aspect-[9/19.5] flex-col items-center overflow-hidden rounded-[43px] bg-gradient-to-b from-[#0a0a0f] to-[#050507]">
               {/* Subtle screen edge highlight */}
               <div className="pointer-events-none absolute inset-0 rounded-[43px] ring-1 ring-inset ring-white/[0.04]" />
 
@@ -407,9 +406,16 @@ function PhoneWaitlistUI() {
   const [honeypot, setHoneypot] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error" | "rate-limited">("idle")
   const [errorMsg, setErrorMsg] = useState("")
+  const [consentNudge, setConsentNudge] = useState(false)
+
+  const nudgeConsent = () => {
+    setConsentNudge(true)
+    setTimeout(() => setConsentNudge(false), 1500)
+  }
 
   const handleSubmit = async () => {
-    if (!email || !consent) return
+    if (!consent) { nudgeConsent(); return }
+    if (!email) return
     setStatus("loading")
     setErrorMsg("")
     try {
@@ -444,9 +450,7 @@ function PhoneWaitlistUI() {
         {/* Premium app icon with layered glow */}
         <div className="relative">
           <div className="absolute -inset-3 rounded-3xl bg-[#A855F7]/10 blur-xl" />
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-[16px] bg-gradient-to-br from-[#A855F7] via-[#9333EA] to-[#7C3AED] [box-shadow:0_4px_16px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
-            <Terminal className="h-6 w-6 text-white" />
-          </div>
+          <img src="/images/logo.svg" alt="PocketMolt" className="relative h-14 w-14 rounded-[16px] [box-shadow:0_4px_16px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]" />
         </div>
         <p className="font-display text-[17px] font-bold tracking-tight text-white">PocketMolt</p>
         <p className="max-w-[180px] text-center text-[12px] leading-snug text-white/30">
@@ -475,7 +479,10 @@ function PhoneWaitlistUI() {
                 if (status === "error" || status === "rate-limited") setStatus("idle")
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && email && consent) handleSubmit()
+                if (e.key === "Enter" && email) {
+                  if (!consent) { nudgeConsent(); return }
+                  handleSubmit()
+                }
               }}
               className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[16px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
             />
@@ -494,21 +501,21 @@ function PhoneWaitlistUI() {
               <p className="text-center text-[10px] text-red-400">{errorMsg}</p>
             )}
             {/* GDPR consent — before button */}
-            <label className="flex items-start gap-2 cursor-pointer py-0.5">
+            <label className={`flex items-start gap-2 cursor-pointer py-0.5 transition-all duration-300 ${consentNudge ? "text-[#A855F7]/80 animate-[shake_0.4s_ease-in-out]" : ""}`}>
               <input
                 type="checkbox"
                 checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
+                onChange={(e) => { setConsent(e.target.checked); setConsentNudge(false) }}
                 className="mt-0.5 h-3 w-3 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
               />
-              <span className="text-[10px] leading-snug text-white/30">
-                I agree to receive updates. No spam, unsubscribe anytime.
+              <span className={`text-[10px] leading-snug transition-colors duration-300 ${consentNudge ? "text-[#A855F7]/70" : "text-white/30"}`}>
+                {consentNudge ? "↑ Please check this box to continue" : "I agree to receive updates. No spam, unsubscribe anytime."}
               </span>
             </label>
             <button
               onClick={handleSubmit}
               disabled={status === "loading" || !email || !consent}
-              className="w-full rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-3 text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
+              className="w-full rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-3 text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
@@ -529,9 +536,16 @@ function StandaloneWaitlist() {
   const [honeypot, setHoneypot] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error" | "rate-limited">("idle")
   const [errorMsg, setErrorMsg] = useState("")
+  const [consentNudge, setConsentNudge] = useState(false)
+
+  const nudgeConsent = () => {
+    setConsentNudge(true)
+    setTimeout(() => setConsentNudge(false), 1500)
+  }
 
   const handleSubmit = async () => {
-    if (!email || !consent) return
+    if (!consent) { nudgeConsent(); return }
+    if (!email) return
     setStatus("loading")
     setErrorMsg("")
     try {
@@ -586,14 +600,17 @@ function StandaloneWaitlist() {
                 if (status === "error" || status === "rate-limited") setStatus("idle")
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && email && consent) handleSubmit()
+                if (e.key === "Enter" && email) {
+                  if (!consent) { nudgeConsent(); return }
+                  handleSubmit()
+                }
               }}
               className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3.5 text-[16px] text-foreground placeholder:text-muted-foreground/40 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
             />
             <button
               onClick={handleSubmit}
               disabled={status === "loading" || !email || !consent}
-              className="shrink-0 rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] px-6 py-3.5 text-[15px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] hover:[box-shadow:0_0_0_1px_rgba(168,85,247,0.6),0_6px_24px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]"
+              className="shrink-0 rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] px-6 py-3.5 text-[15px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] hover:[box-shadow:0_0_0_1px_rgba(168,85,247,0.6),0_6px_24px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
@@ -612,15 +629,15 @@ function StandaloneWaitlist() {
           {(status === "error" || status === "rate-limited") && (
             <p className="text-sm text-red-400">{errorMsg}</p>
           )}
-          <label className="flex items-start gap-2.5 cursor-pointer">
+          <label className={`flex items-start gap-2.5 cursor-pointer transition-all duration-300 ${consentNudge ? "animate-[shake_0.4s_ease-in-out]" : ""}`}>
             <input
               type="checkbox"
               checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
+              onChange={(e) => { setConsent(e.target.checked); setConsentNudge(false) }}
               className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
             />
-            <span className="text-[13px] leading-snug text-muted-foreground/60">
-              I agree to receive updates about PocketMolt. No spam, unsubscribe anytime.
+            <span className={`text-[13px] leading-snug transition-colors duration-300 ${consentNudge ? "text-[#A855F7]/70" : "text-muted-foreground/60"}`}>
+              {consentNudge ? "↑ Please check this box to continue" : "I agree to receive updates about PocketMolt. No spam, unsubscribe anytime."}
             </span>
           </label>
         </div>
@@ -635,14 +652,6 @@ function StandaloneWaitlist() {
 export default function Home() {
   useLenis()
 
-  const [heroFocusPhone, setHeroFocusPhone] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener("resize", check)
-    return () => window.removeEventListener("resize", check)
-  }, [])
   const heroRef = useRef<HTMLElement>(null)
   const { scrollYProgress: heroScroll } = useScroll({
     target: heroRef,
@@ -651,18 +660,38 @@ export default function Home() {
   const heroOpacity = useTransform(heroScroll, [0, 0.7], [1, 0])
   const heroY = useTransform(heroScroll, [0, 0.7], [0, -80])
 
+  // Phone "out of pocket" animation — scroll-driven
+  const phoneRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress: phoneProgress } = useScroll({
+    target: phoneRef,
+    offset: ["start end", "center center"],
+  })
+  const phoneY = useTransform(phoneProgress, [0, 1], [120, -420])
+  const phoneScale = useTransform(phoneProgress, [0, 0.5, 1], [0.88, 1, 1])
+  const phoneRotateX = useTransform(phoneProgress, [0, 0.5], [12, 0])
+  const phoneOpacity = useTransform(phoneProgress, [0, 0.05, 0.3], [0.6, 0.7, 1])
+
+  const scrollToPhone = useCallback(() => {
+    const el = phoneRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const scrollTarget = window.scrollY + rect.top - window.innerHeight * 0.25
+    window.scrollTo({ top: scrollTarget, behavior: "smooth" })
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 w-full border-b border-white/[0.04] bg-black/80 backdrop-blur-xl [box-shadow:0_1px_0_rgba(255,255,255,0.03)]">
         <div className="container flex h-16 items-center justify-between">
-          <a
+          <button
+            type="button"
             className="flex cursor-pointer items-center gap-2"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img src="/images/logo.svg" alt="PocketMolt logo" className="h-7 w-7 rounded-md" />
             <span className="font-display text-lg font-semibold">PocketMolt</span>
-          </a>
+          </button>
           <div className="flex items-center gap-1 md:gap-2">
             <nav className="flex items-center">
               {["Demo", "Security", "Team"].map((item) => (
@@ -675,21 +704,21 @@ export default function Home() {
                 </a>
               ))}
             </nav>
-            <a href="#waitlist" className="ml-1 md:ml-3">
+            <button type="button" onClick={scrollToPhone} className="ml-1 md:ml-3">
               <Button
                 size="sm"
                 className="h-9 rounded-lg border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(220,218,214,0.9)_50%,rgba(180,178,174,0.85)_100%)] px-5 text-sm font-semibold text-[#111] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] hover:brightness-105 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.25),0_8px_20px_rgba(0,0,0,0.15)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.3),0_12px_28px_rgba(0,0,0,0.2),0_0_20px_rgba(255,255,255,0.05)]"
               >
                 Join Waitlist
               </Button>
-            </a>
+            </button>
           </div>
         </div>
       </header>
 
       <main className="flex-1">
         {/* ── Hero ── */}
-        <section ref={heroRef} className="relative flex min-h-[100dvh] flex-col justify-center overflow-hidden pt-24 md:pt-32">
+        <section ref={heroRef} className="relative flex min-h-[100dvh] flex-col items-center overflow-hidden pt-24 md:pt-32">
           {/* Star field */}
           <HeroPattern />
 
@@ -703,17 +732,18 @@ export default function Home() {
           <motion.div style={{ opacity: heroOpacity, y: heroY }} className="relative w-full">
             <div className="container mx-auto px-4 md:px-6">
               <div className="flex flex-col items-center text-center">
-                {/* Content — always centered */}
-                <motion.div
-                  className="flex flex-col items-center gap-8"
-                  animate={{
-                    y: heroFocusPhone ? (isMobile ? -20 : -40) : 0,
-                    opacity: heroFocusPhone ? 0 : 1,
-                    scale: heroFocusPhone ? 0.98 : 1,
-                  }}
-                  transition={{ duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }}
-                  style={{ pointerEvents: heroFocusPhone ? "none" : "auto" }}
-                >
+                {/* Hero text */}
+                <motion.div className="flex flex-col items-center gap-8">
+                  <motion.div
+                    className="relative"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, delay: 0, ease: [0.25, 0.4, 0.25, 1] }}
+                  >
+                    <div className="absolute -inset-4 rounded-3xl bg-[#A855F7]/8 blur-2xl" />
+                    <img src="/images/logo.svg" alt="PocketMolt" className="relative h-20 w-20 rounded-2xl md:h-24 md:w-24" />
+                  </motion.div>
+
                   <motion.h1
                     className="font-display text-[3.5rem] font-extrabold tracking-tighter text-foreground sm:text-[4.5rem] md:text-[5.5rem] xl:text-[6rem] leading-[0.95]"
                     initial={{ opacity: 0, y: 24 }}
@@ -744,13 +774,14 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
                   >
-                    <Button
-                      onClick={() => setHeroFocusPhone(true)}
-                      className="h-13 rounded-xl border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(220,218,214,0.9)_50%,rgba(180,178,174,0.85)_100%)] px-8 text-[15px] font-semibold text-[#111] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] hover:brightness-105 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.25),0_8px_20px_rgba(0,0,0,0.15),0_0_40px_rgba(255,255,255,0.04)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.3),0_16px_32px_rgba(0,0,0,0.2),0_0_50px_rgba(255,255,255,0.06)]"
-                    >
-                      Join Waitlist
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <button type="button" onClick={scrollToPhone}>
+                      <Button
+                        className="h-13 rounded-xl border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(220,218,214,0.9)_50%,rgba(180,178,174,0.85)_100%)] px-8 text-[15px] font-semibold text-[#111] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[1px] hover:brightness-105 [box-shadow:inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.3),0_2px_8px_rgba(0,0,0,0.25),0_8px_20px_rgba(0,0,0,0.15),0_0_40px_rgba(255,255,255,0.04)] hover:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.3),0_16px_32px_rgba(0,0,0,0.2),0_0_50px_rgba(255,255,255,0.06)]"
+                      >
+                        Join Waitlist
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </button>
                     <a
                       href="#demo"
                       className="inline-flex h-13 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-8 text-[15px] font-medium text-foreground transition-all duration-200 hover:-translate-y-[1px] hover:border-white/[0.12] hover:bg-white/[0.05]"
@@ -772,74 +803,63 @@ export default function Home() {
                       Initial launch capped at <span className="text-foreground/70 font-medium">1,000 users</span>
                     </span>
                   </motion.div>
-                </motion.div>
 
-                {/* iPhone — sits low, partially behind the security bar like in a pocket */}
-                <motion.div
-                  className="relative mt-12 md:mt-16"
-                  animate={{
-                    y: heroFocusPhone ? (isMobile ? -200 : -300) : 80,
-                    scale: heroFocusPhone ? (isMobile ? 1.02 : 1.15) : 1,
-                    zIndex: heroFocusPhone ? 20 : 1,
-                  }}
-                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[100px]" />
-                  <motion.div
-                    animate={{ y: heroFocusPhone ? 0 : [0, -4, 0] }}
-                    transition={heroFocusPhone ? { duration: 0.4 } : { duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <IPhoneMockup className="w-[290px] md:w-[300px]" />
-                  </motion.div>
-
-                  {/* Back button — sits right below the phone */}
-                  <motion.button
-                    onClick={() => setHeroFocusPhone(false)}
-                    className="mx-auto mt-8 flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-                    animate={{
-                      opacity: heroFocusPhone ? 1 : 0,
-                    }}
-                    transition={{ duration: 0.4, delay: heroFocusPhone ? 0.5 : 0 }}
-                    style={{ pointerEvents: heroFocusPhone ? "auto" : "none" }}
-                  >
-                    ← Back
-                  </motion.button>
                 </motion.div>
               </div>
             </div>
           </motion.div>
 
-          {/* Security features row pinned to hero bottom — acts as the "pocket" */}
-          <motion.div
-            className="absolute inset-x-0 bottom-0 z-10 border-t border-white/[0.08] bg-black/95 backdrop-blur-xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
+          {/* ── Phone "out of pocket" — clipped by hero overflow-hidden ── */}
+          <div
+            id="phone"
+            ref={phoneRef}
+            className="relative z-10 mt-8 flex flex-col items-center pb-0 md:mt-12"
+            style={{ perspective: "1200px" }}
           >
-            <div className="container mx-auto grid grid-cols-2 gap-y-0 px-4 py-0 md:grid-cols-4 md:px-6">
-              {[
-                { title: "Fully encrypted", desc: "by default", icon: Lock },
-                { title: "Your data", desc: "stays yours", icon: Database },
-                { title: "Always on", desc: "99.9% uptime", icon: ShieldCheck },
-                { title: "Monitored", desc: "around the clock", icon: Eye },
-              ].map((item, i) => (
-                <div
-                  key={item.title}
-                  className={`flex items-center gap-4 px-6 py-6 ${
-                    i < 3 ? "md:border-r md:border-white/[0.06]" : ""
-                  } ${i < 2 ? "border-b border-white/[0.06] md:border-b-0" : i === 2 ? "border-b border-white/[0.06] md:border-b-0" : ""}`}
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04]">
-                    <item.icon className="h-4 w-4 text-primary/70" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[14px] font-semibold text-foreground">{item.title}</span>
-                    <span className="text-[12px] text-foreground/40">{item.desc}</span>
-                  </div>
+            <motion.div
+              className="relative"
+              style={{
+                y: phoneY,
+                scale: phoneScale,
+                rotateX: phoneRotateX,
+                opacity: phoneOpacity,
+              }}
+            >
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <IPhoneMockup className="w-[290px] md:w-[320px]" />
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── Security trust bar ── */}
+        <section className="relative z-20 border-y border-white/[0.08] bg-black">
+          <div className="container mx-auto grid grid-cols-2 gap-y-0 px-4 py-0 md:grid-cols-4 md:px-6">
+            {[
+              { title: "Fully encrypted", desc: "by default", icon: Lock },
+              { title: "Your data", desc: "stays yours", icon: Database },
+              { title: "Always on", desc: "99.9% uptime", icon: ShieldCheck },
+              { title: "Monitored", desc: "around the clock", icon: Eye },
+            ].map((item, i) => (
+              <div
+                key={item.title}
+                className={`flex items-center gap-4 px-6 py-6 ${
+                  i < 3 ? "md:border-r md:border-white/[0.06]" : ""
+                } ${i < 2 ? "border-b border-white/[0.06] md:border-b-0" : i === 2 ? "border-b border-white/[0.06] md:border-b-0" : ""}`}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04]">
+                  <item.icon className="h-4 w-4 text-primary/70" />
                 </div>
-              ))}
-            </div>
-          </motion.div>
+                <div className="flex flex-col">
+                  <span className="text-[14px] font-semibold text-foreground">{item.title}</span>
+                  <span className="text-[12px] text-foreground/40">{item.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
 
@@ -852,6 +872,7 @@ export default function Home() {
           <div className="container relative mx-auto px-4 md:px-6">
             <Reveal>
               <div className="mb-12 max-w-2xl mx-auto text-center">
+                <img src="/images/logo.svg" alt="" className="mx-auto mb-5 h-9 w-9 rounded-lg opacity-60" />
                 <h2 className="font-display text-3xl font-bold text-foreground sm:text-4xl md:text-5xl">
                   See how it works
                 </h2>
@@ -1100,7 +1121,7 @@ export default function Home() {
                 name="Rafael"
                 role="Founder"
                 bio="Obsessed with making MoltBot deployment something anyone can do — no tech skills needed."
-                image="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop&crop=face"
+                image="/team/rafael.jpeg"
                 socials={{ x: "https://x.com/rafkramer" }}
                 delay={0}
               />
@@ -1138,18 +1159,33 @@ export default function Home() {
               </div>
             </Reveal>
 
-            <div className="grid gap-0 md:grid-cols-2 md:gap-x-16">
-              {[
+            {(() => {
+              const items = [
                 { q: "What exactly is PocketMolt?", a: "PocketMolt is an app that deploys and runs your MoltBot for you. You sign up, configure your bot, and you're live — fully hosted, secured, and monitored. No servers, no terminal, no maintenance. API keys are optional — you can use yours or ours." },
                 { q: "Do I need any technical knowledge?", a: "None. The entire setup happens through a simple dashboard. No terminal, no config files, no coding required." },
                 { q: "Is my data safe?", a: "Yes. Everything is encrypted — your data, your traffic, and any API keys you choose to add. We also have built-in prompt injection filtering to stop malicious inputs from hijacking your bot. We use the same security standards as banks and enterprise software, and a dedicated cybersecurity expert monitors every deployment." },
                 { q: "What happens after I join the waitlist?", a: "When your spot opens, you get instant access to deploy your MoltBot. The initial launch is limited to 1,000 users so we can guarantee quality for everyone." },
                 { q: "I already self-host MoltBot. Can I switch?", a: "Yes. We built a migration path that moves your configs and data over securely. You keep everything, just without the maintenance burden." },
                 { q: "What will it cost?", a: "Pricing will be announced at launch. Everyone on the waitlist gets early-bird pricing locked in." },
-              ].map((item, i) => (
-                <FAQItem key={item.q} question={item.q} answer={item.a} delay={i * 0.05} />
-              ))}
-            </div>
+              ]
+              const half = Math.ceil(items.length / 2)
+              const left = items.slice(0, half)
+              const right = items.slice(half)
+              return (
+                <div className="flex flex-col gap-0 md:flex-row md:gap-16">
+                  <div className="flex-1">
+                    {left.map((item, i) => (
+                      <FAQItem key={item.q} question={item.q} answer={item.a} delay={i * 0.05} />
+                    ))}
+                  </div>
+                  <div className="flex-1">
+                    {right.map((item, i) => (
+                      <FAQItem key={item.q} question={item.q} answer={item.a} delay={(i + half) * 0.05} />
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </section>
 
@@ -1168,6 +1204,7 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           viewport={{ once: true }}
         >
+          <img src="/images/logo.svg" alt="" className="mx-auto mb-6 h-12 w-12 rounded-xl opacity-80" />
           <h2 className="font-display text-[2.5rem] font-extrabold leading-[1.1] tracking-tighter text-foreground sm:text-5xl md:text-[4rem]">
             Get Your MoltBot Running
           </h2>
@@ -1203,6 +1240,12 @@ export default function Home() {
             X.com
           </a>
         </motion.div>
+
+        {/* Footer bottom */}
+        <div className="relative z-10 mt-16 flex items-center gap-2 text-[12px] text-muted-foreground/30">
+          <img src="/images/logo.svg" alt="" className="h-4 w-4 rounded-[4px] opacity-40" />
+          <span>&copy; {new Date().getFullYear()} PocketMolt</span>
+        </div>
       </footer>
     </div>
   )
