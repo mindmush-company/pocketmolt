@@ -15,8 +15,8 @@ interface MoltBotConfig {
       botToken: string
     }
     whatsapp?: {
-      enabled: boolean
       dmPolicy: string
+      allowFrom: string[]
     }
   }
   proxy?: {
@@ -93,8 +93,8 @@ export async function handleConfigRequest(
 
     if (bot.channel_type === 'whatsapp') {
       config.channels.whatsapp = {
-        enabled: true,
         dmPolicy: bot.dm_policy || 'open',
+        allowFrom: ['*'],
       }
     }
 

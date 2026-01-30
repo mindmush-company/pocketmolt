@@ -109,84 +109,98 @@ server.on('upgrade', (req, socket, head) => {
   ].join('\\r\\n'));
   
   log('WebSocket connection established, starting pairing...');
-  sendWs(socket, 'status', { message: 'Starting WhatsApp pairing...' });
+  sendWs(socket, 'status', { message: 'Configuring WhatsApp channel...' });
   
-  const child = spawn('clawdbot', ['channels', 'login', '--channel', 'whatsapp'], {
-    env: { ...process.env, CLAWDBOT_CONFIG_PATH: '/root/.clawdbot/moltbot.json' }
-  });
+  const env = { ...process.env, CLAWDBOT_CONFIG_PATH: '/root/.clawdbot/moltbot.json' };
   
-  let qrBuffer = '';
-  let currentQr = '';
+  // First, add the WhatsApp channel (idempotent - safe to run multiple times)
+  const addChannel = spawn('clawdbot', ['channels', 'add', '--channel', 'whatsapp'], { env });
   
-  child.stdout.on('data', (data) => {
-    const text = data.toString();
-    log(\`stdout: \${text.substring(0, 100)}...\`);
+  addChannel.on('close', (addCode) => {
+    log(\`channels add exited with code \${addCode}\`);
     
-    const qrMatch = text.match(/QR Code:\\s*([A-Za-z0-9+/=]+)/);
-    if (qrMatch) {
-      currentQr = qrMatch[1];
-      sendWs(socket, 'qr', { code: currentQr });
-      return;
+    if (addCode !== 0) {
+      log('Failed to add WhatsApp channel, trying login anyway...');
     }
     
-    if (text.includes('Scan this QR')) {
-      qrBuffer = '';
-      return;
-    }
+    sendWs(socket, 'status', { message: 'Starting WhatsApp pairing...' });
     
-    if (text.includes('█') || text.includes('▀') || text.includes('▄')) {
-      qrBuffer += text;
-      return;
-    }
-    
-    if (text.toLowerCase().includes('paired') || text.toLowerCase().includes('connected')) {
-      sendWs(socket, 'paired', { success: true });
+    // Now run the login command
+    const child = spawn('clawdbot', ['channels', 'login', '--channel', 'whatsapp', '--verbose'], { env });
+  
+    let qrBuffer = '';
+    let currentQr = '';
+  
+    child.stdout.on('data', (data) => {
+      const text = data.toString();
+      log(\`stdout: \${text.substring(0, 100)}...\`);
+      
+      const qrMatch = text.match(/QR Code:\\s*([A-Za-z0-9+/=]+)/);
+      if (qrMatch) {
+        currentQr = qrMatch[1];
+        sendWs(socket, 'qr', { code: currentQr });
+        return;
+      }
+      
+      if (text.includes('Scan this QR')) {
+        qrBuffer = '';
+        return;
+      }
+      
+      if (text.includes('█') || text.includes('▀') || text.includes('▄')) {
+        qrBuffer += text;
+        return;
+      }
+      
+      if (text.toLowerCase().includes('paired') || text.toLowerCase().includes('connected')) {
+        sendWs(socket, 'paired', { success: true });
+        child.kill();
+        return;
+      }
+      
+      if (text.toLowerCase().includes('error') || text.toLowerCase().includes('failed')) {
+        sendWs(socket, 'error', { message: text.trim() });
+      }
+    });
+  
+    child.stderr.on('data', (data) => {
+      const text = data.toString();
+      log(\`stderr: \${text}\`);
+      sendWs(socket, 'log', { message: text.trim() });
+    });
+  
+    child.on('close', (code) => {
+      log(\`Pairing process exited with code \${code}\`);
+      if (code === 0) {
+        sendWs(socket, 'complete', { success: true });
+      } else {
+        sendWs(socket, 'error', { message: \`Process exited with code \${code}\` });
+      }
+      socket.end();
+    });
+  
+    socket.on('data', (buffer) => {
+      const msg = parseFrame(buffer);
+      if (msg) {
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed.type === 'cancel') {
+            log('Pairing cancelled by client');
+            child.kill();
+          }
+        } catch (e) {}
+      }
+    });
+  
+    socket.on('close', () => {
+      log('Client disconnected');
       child.kill();
-      return;
-    }
-    
-    if (text.toLowerCase().includes('error') || text.toLowerCase().includes('failed')) {
-      sendWs(socket, 'error', { message: text.trim() });
-    }
-  });
+    });
   
-  child.stderr.on('data', (data) => {
-    const text = data.toString();
-    log(\`stderr: \${text}\`);
-    sendWs(socket, 'log', { message: text.trim() });
-  });
-  
-  child.on('close', (code) => {
-    log(\`Pairing process exited with code \${code}\`);
-    if (code === 0) {
-      sendWs(socket, 'complete', { success: true });
-    } else {
-      sendWs(socket, 'error', { message: \`Process exited with code \${code}\` });
-    }
-    socket.end();
-  });
-  
-  socket.on('data', (buffer) => {
-    const msg = parseFrame(buffer);
-    if (msg) {
-      try {
-        const parsed = JSON.parse(msg);
-        if (parsed.type === 'cancel') {
-          log('Pairing cancelled by client');
-          child.kill();
-        }
-      } catch (e) {}
-    }
-  });
-  
-  socket.on('close', () => {
-    log('Client disconnected');
-    child.kill();
-  });
-  
-  socket.on('error', (err) => {
-    log(\`Socket error: \${err.message}\`);
-    child.kill();
+    socket.on('error', (err) => {
+      log(\`Socket error: \${err.message}\`);
+      child.kill();
+    });
   });
 });
 

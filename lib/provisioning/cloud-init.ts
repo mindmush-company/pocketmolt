@@ -132,7 +132,6 @@ ${indentCert(caCert)}
       if [ "$WHATSAPP_ENABLED" = "true" ]; then
         CHANNELS_JSON=$(jq -n --arg dmPolicy "$WHATSAPP_DM_POLICY" '{
           whatsapp: {
-            enabled: true,
             dmPolicy: $dmPolicy,
             allowFrom: ["*"]
           }
@@ -140,7 +139,6 @@ ${indentCert(caCert)}
       elif [ -n "$TELEGRAM_TOKEN" ]; then
         CHANNELS_JSON=$(jq -n --arg token "$TELEGRAM_TOKEN" '{
           telegram: {
-            enabled: true,
             dmPolicy: "open",
             allowFrom: ["*"],
             botToken: $token
