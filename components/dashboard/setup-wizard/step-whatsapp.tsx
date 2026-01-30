@@ -30,8 +30,18 @@ export function StepWhatsApp({ botId, onComplete, onBack }: StepWhatsAppProps) {
       setErrorMsg('')
 
       const res = await fetch(`/api/bots/${botId}/whatsapp`)
-      if (!res.ok) throw new Error('Failed to get connection details')
-      const { wsUrl } = await res.json()
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to get connection details')
+      }
+      const { ready, error } = await res.json()
+      
+      if (!ready) {
+        throw new Error(error || 'Bot is not ready for pairing')
+      }
+
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsUrl = `${wsProtocol}//${window.location.host}/ws/bots/${botId}/pair`
 
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws

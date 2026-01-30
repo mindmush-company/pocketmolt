@@ -128,56 +128,55 @@ ${indentCert(caCert)}
       
       mkdir -p "$(dirname "$MOLTBOT_CONFIG")"
       
-      # Build channels config based on what's enabled
+      # Build config JSON using jq to avoid heredoc YAML issues
       if [ "$WHATSAPP_ENABLED" = "true" ]; then
-        CHANNELS_CONFIG=$(cat <<CHANEOF
-        "whatsapp": {
-          "enabled": true,
-          "dmPolicy": "$WHATSAPP_DM_POLICY",
-          "allowFrom": ["*"]
-        }
-CHANEOF
-)
+        CHANNELS_JSON=$(jq -n --arg dmPolicy "$WHATSAPP_DM_POLICY" '{
+          whatsapp: {
+            enabled: true,
+            dmPolicy: $dmPolicy,
+            allowFrom: ["*"]
+          }
+        }')
       elif [ -n "$TELEGRAM_TOKEN" ]; then
-        CHANNELS_CONFIG=$(cat <<CHANEOF
-        "telegram": {
-          "enabled": true,
-          "dmPolicy": "open",
-          "allowFrom": ["*"],
-          "botToken": "$TELEGRAM_TOKEN"
-        }
-CHANEOF
-)
+        CHANNELS_JSON=$(jq -n --arg token "$TELEGRAM_TOKEN" '{
+          telegram: {
+            enabled: true,
+            dmPolicy: "open",
+            allowFrom: ["*"],
+            botToken: $token
+          }
+        }')
       else
-        CHANNELS_CONFIG=""
+        CHANNELS_JSON='{}'
       fi
       
-      cat > "$MOLTBOT_CONFIG" <<MOLTEOF
-      {
-        "agents": {
-          "defaults": {
-            "model": {
-              "primary": "$MODEL"
+      # Build full config using jq
+      jq -n \
+        --arg model "$MODEL" \
+        --argjson channels "$CHANNELS_JSON" \
+        --arg backendIp "${BACKEND_IP}" \
+        '{
+          agents: {
+            defaults: {
+              model: {
+                primary: $model
+              }
             }
+          },
+          channels: $channels,
+          gateway: {
+            mode: "local",
+            bind: "lan",
+            port: 18789,
+            auth: {
+              mode: "token"
+            },
+            controlUi: {
+              allowInsecureAuth: true
+            },
+            trustedProxies: [$backendIp]
           }
-        },
-        "channels": {
-$CHANNELS_CONFIG
-        },
-        "gateway": {
-          "mode": "local",
-          "bind": "lan",
-          "port": 18789,
-          "auth": {
-            "mode": "token"
-          },
-          "controlUi": {
-            "allowInsecureAuth": true
-          },
-          "trustedProxies": ["${BACKEND_IP}"]
-        }
-      }
-      MOLTEOF
+        }' > "$MOLTBOT_CONFIG"
       
       if [ -n "$PROXY_BASE_URL" ] && [ -n "$PROXY_API_KEY" ]; then
         echo "ANTHROPIC_API_KEY=$PROXY_API_KEY" > /opt/pocketmolt/env
