@@ -476,7 +476,7 @@ function PhoneWaitlistUI() {
                   e.target.scrollIntoView({ behavior: "smooth", block: "center" })
                 }, 300)
               }}
-              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[16px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
             />
             {/* Honeypot — hidden from humans, bots fill it */}
             <input
