@@ -129,35 +129,37 @@ server.on('upgrade', (req, socket, head) => {
     const child = spawn('clawdbot', ['channels', 'login', '--channel', 'whatsapp', '--verbose'], { env });
   
     let qrBuffer = '';
-    let currentQr = '';
   
     child.stdout.on('data', (data) => {
       const text = data.toString();
       log(\`stdout: \${text.substring(0, 100)}...\`);
       
-      const qrMatch = text.match(/QR Code:\\s*([A-Za-z0-9+/=]+)/);
-      if (qrMatch) {
-        currentQr = qrMatch[1];
-        sendWs(socket, 'qr', { code: currentQr });
-        return;
-      }
-      
-      if (text.includes('Scan this QR')) {
-        qrBuffer = '';
-        return;
-      }
-      
-      if (text.includes('█') || text.includes('▀') || text.includes('▄')) {
-        qrBuffer += text;
-        return;
-      }
-      
-      if (text.toLowerCase().includes('paired') || text.toLowerCase().includes('connected')) {
+      // Check for pairing success
+      if (text.toLowerCase().includes('paired') || text.toLowerCase().includes('connected') || text.toLowerCase().includes('logged in')) {
         sendWs(socket, 'paired', { success: true });
         child.kill();
         return;
       }
       
+      // Start of new QR code - reset buffer
+      if (text.includes('Scan this QR')) {
+        qrBuffer = '';
+        return;
+      }
+      
+      // Accumulate QR code lines (block characters)
+      if (text.includes('█') || text.includes('▀') || text.includes('▄')) {
+        qrBuffer += text;
+        // Check if we have a complete QR code (ends with full block row)
+        if (qrBuffer.includes('█▄▄▄▄▄▄▄█') || qrBuffer.split('\\n').length > 25) {
+          // Send the ASCII QR code to frontend
+          sendWs(socket, 'qr', { code: qrBuffer.trim() });
+          log('Sent QR code to client');
+        }
+        return;
+      }
+      
+      // Check for errors
       if (text.toLowerCase().includes('error') || text.toLowerCase().includes('failed')) {
         sendWs(socket, 'error', { message: text.trim() });
       }

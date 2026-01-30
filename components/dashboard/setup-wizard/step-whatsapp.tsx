@@ -136,9 +136,9 @@ export function StepWhatsApp({ botId, onComplete, onBack }: StepWhatsAppProps) {
         )}
 
         {state === 'qr' && (
-          <div className="space-y-6 w-full">
-            <div className="bg-white p-4 rounded-lg inline-block shadow-sm">
-              <pre className="font-mono text-[10px] leading-none select-all overflow-auto max-w-full p-2 bg-white text-black whitespace-pre-wrap break-all">
+          <div className="space-y-6 w-full flex flex-col items-center">
+            <div className="bg-white p-4 rounded-lg shadow-sm overflow-x-auto">
+              <pre className="font-mono text-[8px] leading-[8px] select-all bg-white text-black whitespace-pre">
                 {qrCode}
               </pre>
             </div>
