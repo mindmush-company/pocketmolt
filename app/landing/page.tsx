@@ -1001,16 +1001,16 @@ export default function Home() {
                 name="Juan"
                 role="Cybersecurity Lead"
                 bio="Makes sure every bot deployed through PocketMolt is locked down and monitored 24/7."
-                image="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop&crop=face"
-                socials={{ linkedin: "#" }}
+                image="/team/Juan.jpeg"
+                socials={{ linkedin: "https://www.linkedin.com/in/juanjimenezbleye/", x: "https://x.com/RiftWhiteHat" }}
                 delay={0.1}
               />
               <TeamCard
-                name="Team Member"
+                name="Youssef"
                 role="Role"
-                bio="Replace this with a short bio about the team member and their contribution."
-                image="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&h=800&fit=crop&crop=face"
-                socials={{ linkedin: "#", x: "#" }}
+                bio="Replace this with a short bio about Youssef and their contribution."
+                image="/team/youssef.jpeg"
+                socials={{ x: "https://x.com/Sronds" }}
                 delay={0.2}
               />
             </div>
