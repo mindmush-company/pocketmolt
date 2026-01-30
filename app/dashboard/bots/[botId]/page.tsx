@@ -4,7 +4,7 @@ import { ArrowLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BotDashboardGate } from "@/components/dashboard/bot-dashboard-gate"
 import { BotActions } from "@/components/dashboard/bot-actions"
 import { BotConfigForm } from "@/components/dashboard/bot-config-form"
 import { BotHealthStatus } from "@/components/dashboard/bot-health-status"
@@ -116,7 +116,6 @@ export default async function BotDetailsPage({ params }: BotDetailsProps) {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
-      {/* 1. Header with Status and Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
@@ -146,86 +145,84 @@ export default async function BotDetailsPage({ params }: BotDetailsProps) {
         </div>
       </div>
 
-      {bot.status === 'starting' && (
-        <BotProvisioningStatus
-          botId={bot.id}
-          botName={bot.name}
-          initialStatus={bot.status}
-          createdAt={bot.created_at}
+      <BotDashboardGate botId={bot.id} botStatus={bot.status} botName={bot.name}>
+        {bot.status === 'starting' && (
+          <BotProvisioningStatus
+            botId={bot.id}
+            botName={bot.name}
+            initialStatus={bot.status}
+            createdAt={bot.created_at}
+          />
+        )}
+
+        <ChannelStatus 
+           botId={bot.id} 
+           channelType={bot.channel_type} 
+           whatsappConnectedAt={bot.whatsapp_connected_at}
+           telegramBotName={undefined}
         />
-      )}
 
-      {/* 2. Channel Status Section */}
-      <ChannelStatus 
-         botId={bot.id} 
-         channelType={bot.channel_type} 
-         whatsappConnectedAt={bot.whatsapp_connected_at}
-         telegramBotName={undefined} // We don't have the bot username easily available, that's fine
-      />
+        <div className="grid gap-6 md:grid-cols-1">
+          <BotConfigForm
+            botId={bot.id}
+            hasApiKey={configStatus.hasApiKey}
+            hasTelegramToken={configStatus.hasTelegramToken}
+            initialEmoji={bot.bot_emoji ?? '🤖'}
+            initialTheme={bot.bot_theme ?? 'helpful'}
+            initialDmPolicy={bot.dm_policy ?? 'pairing'}
+          />
+        </div>
 
-      {/* 3. Configuration Section */}
-      <div className="grid gap-6 md:grid-cols-1">
-        <BotConfigForm
-          botId={bot.id}
-          hasApiKey={configStatus.hasApiKey}
-          hasTelegramToken={configStatus.hasTelegramToken}
-          initialEmoji={bot.bot_emoji ?? '🤖'}
-          initialTheme={bot.bot_theme ?? 'helpful'}
-          initialDmPolicy={bot.dm_policy ?? 'pairing'}
-        />
-      </div>
+        {bot.status === 'running' && (
+          <BotUIEmbed
+            botId={bot.id}
+            botStatus={bot.status}
+            botName={bot.name}
+          />
+        )}
 
-      {/* 4. Bot Interface Embed */}
-      {bot.status === 'running' && (
-        <BotUIEmbed
-          botId={bot.id}
-          botStatus={bot.status}
-          botName={bot.name}
-        />
-      )}
-
-      {/* 5. Technical Details (Collapsible) */}
-      <div className="pt-8">
-        <details className="group">
-           <summary className="flex cursor-pointer items-center text-sm text-muted-foreground hover:text-foreground select-none list-none">
-             <ChevronRight className="mr-2 h-4 w-4 transition-transform group-open:rotate-90" />
-             Technical Details
-           </summary>
-           <div className="mt-4 grid gap-4 rounded-lg border p-4 bg-muted/30 text-sm">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="space-y-2">
-                 <div className="font-medium text-foreground">Identifiers</div>
-                 <div className="flex items-center justify-between py-1 border-b border-border/50">
-                    <span className="text-muted-foreground">Bot ID</span>
-                    <span className="font-mono text-xs">{bot.id}</span>
+        <div className="pt-8">
+          <details className="group">
+             <summary className="flex cursor-pointer items-center text-sm text-muted-foreground hover:text-foreground select-none list-none">
+               <ChevronRight className="mr-2 h-4 w-4 transition-transform group-open:rotate-90" />
+               Technical Details
+             </summary>
+             <div className="mt-4 grid gap-4 rounded-lg border p-4 bg-muted/30 text-sm">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <div className="font-medium text-foreground">Identifiers</div>
+                   <div className="flex items-center justify-between py-1 border-b border-border/50">
+                      <span className="text-muted-foreground">Bot ID</span>
+                      <span className="font-mono text-xs">{bot.id}</span>
+                   </div>
+                   {bot.hetzner_server_id && (
+                      <div className="flex items-center justify-between py-1 border-b border-border/50">
+                        <span className="text-muted-foreground">Server ID</span>
+                        <span className="font-mono text-xs">{bot.hetzner_server_id}</span>
+                      </div>
+                   )}
                  </div>
-                 {bot.hetzner_server_id && (
-                    <div className="flex items-center justify-between py-1 border-b border-border/50">
-                      <span className="text-muted-foreground">Server ID</span>
-                      <span className="font-mono text-xs">{bot.hetzner_server_id}</span>
-                    </div>
-                 )}
-               </div>
-               
-               <div className="space-y-2">
-                  <div className="font-medium text-foreground">Network</div>
-                   {serverInfo?.public_net?.ipv4?.ip && (
-                    <div className="flex items-center justify-between py-1 border-b border-border/50">
-                      <span className="text-muted-foreground">Public IP (NAT)</span>
-                      <span className="font-mono text-xs">{serverInfo.public_net.ipv4.ip}</span>
-                    </div>
-                  )}
-                  {bot.private_ip && (
-                    <div className="flex items-center justify-between py-1 border-b border-border/50">
-                      <span className="text-muted-foreground">Private IP</span>
-                      <span className="font-mono text-xs">{bot.private_ip}</span>
-                    </div>
-                  )}
+                 
+                 <div className="space-y-2">
+                    <div className="font-medium text-foreground">Network</div>
+                     {serverInfo?.public_net?.ipv4?.ip && (
+                      <div className="flex items-center justify-between py-1 border-b border-border/50">
+                        <span className="text-muted-foreground">Public IP (NAT)</span>
+                        <span className="font-mono text-xs">{serverInfo.public_net.ipv4.ip}</span>
+                      </div>
+                    )}
+                    {bot.private_ip && (
+                      <div className="flex items-center justify-between py-1 border-b border-border/50">
+                        <span className="text-muted-foreground">Private IP</span>
+                        <span className="font-mono text-xs">{bot.private_ip}</span>
+                      </div>
+                    )}
+                 </div>
                </div>
              </div>
-           </div>
-        </details>
-      </div>
+          </details>
+        </div>
+      </BotDashboardGate>
     </div>
   )
 }
