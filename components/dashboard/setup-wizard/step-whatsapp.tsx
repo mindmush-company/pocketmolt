@@ -11,7 +11,7 @@ interface StepWhatsAppProps {
   onBack: () => void
 }
 
-type ConnectionState = 'connecting' | 'waiting_qr' | 'qr' | 'paired' | 'error'
+type ConnectionState = 'connecting' | 'waiting_qr' | 'qr' | 'paired' | 'already_paired' | 'error'
 
 interface WebSocketMessage {
   type: 'qr' | 'paired' | 'error'
@@ -35,7 +35,12 @@ export function StepWhatsApp({ botId, onComplete, onBack }: StepWhatsAppProps) {
         const data = await res.json()
         throw new Error(data.error || 'Failed to get connection details')
       }
-      const { ready, error } = await res.json()
+      const { ready, error, whatsappConnectedAt } = await res.json()
+      
+      if (whatsappConnectedAt) {
+        setState('already_paired')
+        return
+      }
       
       if (!ready) {
         throw new Error(error || 'Bot is not ready for pairing')
@@ -158,6 +163,23 @@ export function StepWhatsApp({ botId, onComplete, onBack }: StepWhatsAppProps) {
             </div>
             <h3 className="font-semibold text-lg">Successfully Connected!</h3>
             <p className="text-sm text-muted-foreground">Redirecting...</p>
+          </div>
+        )}
+
+        {state === 'already_paired' && (
+          <div className="flex flex-col items-center gap-4">
+            <div className="rounded-full bg-green-100 p-3 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+              <CheckCircle className="h-8 w-8" />
+            </div>
+            <div className="space-y-1 text-center">
+              <h3 className="font-semibold text-lg">WhatsApp Already Connected</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                Your WhatsApp account is already linked to this bot.
+              </p>
+            </div>
+            <Button onClick={onComplete}>
+              Continue to Dashboard
+            </Button>
           </div>
         )}
 
