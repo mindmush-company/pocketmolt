@@ -23,6 +23,7 @@ import {
   Fingerprint,
   ScanLine,
   ChevronDown,
+  ShieldAlert,
 } from "lucide-react"
 
 gsap.registerPlugin(ScrollTrigger)
@@ -174,7 +175,7 @@ function HorizontalTimeline() {
 
   const steps = [
     { step: "1", title: "Sign up", description: "Create your account in seconds. No credit card, no complicated setup." },
-    { step: "2", title: "Paste your keys", description: "Drop your API keys into the dashboard. That's the only thing you need to configure." },
+    { step: "2", title: "Configure your bot", description: "Optionally add your own API keys, or use ours. Customize your bot from the dashboard." },
     { step: "3", title: "Your bot is live", description: "MoltBot is deployed, encrypted, and monitored — running 24/7 without you lifting a finger." },
   ]
 
@@ -529,6 +530,13 @@ export default function Home() {
   useLenis()
 
   const [heroFocusPhone, setHeroFocusPhone] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
   const heroRef = useRef<HTMLElement>(null)
   const { scrollYProgress: heroScroll } = useScroll({
     target: heroRef,
@@ -592,11 +600,11 @@ export default function Home() {
                 <motion.div
                   className="flex flex-col items-center gap-8"
                   animate={{
-                    y: heroFocusPhone ? -40 : 0,
+                    y: heroFocusPhone ? (isMobile ? -20 : -40) : 0,
                     opacity: heroFocusPhone ? 0 : 1,
-                    scale: heroFocusPhone ? 0.96 : 1,
+                    scale: heroFocusPhone ? 0.98 : 1,
                   }}
-                  transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
+                  transition={{ duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }}
                   style={{ pointerEvents: heroFocusPhone ? "none" : "auto" }}
                 >
                   <motion.h1
@@ -620,7 +628,7 @@ export default function Home() {
                     <span className="text-foreground font-medium">
                       No server setup. No security configs. No maintenance.
                     </span>{" "}
-                    Just paste your keys and you&apos;re live.
+                    Sign up and you&apos;re live.
                   </motion.p>
 
                   <motion.div
@@ -663,16 +671,16 @@ export default function Home() {
                 <motion.div
                   className="relative mt-12 md:mt-16"
                   animate={{
-                    y: heroFocusPhone ? -300 : 80,
-                    scale: heroFocusPhone ? 1.15 : 1,
+                    y: heroFocusPhone ? (isMobile ? -200 : -300) : 80,
+                    scale: heroFocusPhone ? (isMobile ? 1.02 : 1.15) : 1,
                     zIndex: heroFocusPhone ? 20 : 1,
                   }}
-                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[100px]" />
                   <motion.div
-                    animate={{ y: heroFocusPhone ? 0 : [0, -6, 0] }}
-                    transition={heroFocusPhone ? { duration: 0.4 } : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                    animate={{ y: heroFocusPhone ? 0 : [0, -4, 0] }}
+                    transition={heroFocusPhone ? { duration: 0.4 } : { duration: 6, repeat: Infinity, ease: "easeInOut" }}
                   >
                     <IPhoneMockup className="w-[290px] md:w-[300px]" />
                   </motion.div>
@@ -823,6 +831,7 @@ export default function Home() {
                       "API keys sit in plaintext — anyone with access can read them",
                       "Traffic is unencrypted unless you set it up yourself",
                       "You're responsible for patching, updates, and firewall rules",
+                      "No defense against prompt injection — users can hijack your bot",
                       "No alerts — you won't know you've been breached until it's too late",
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-3 text-[14px] text-muted-foreground">
@@ -864,6 +873,7 @@ export default function Home() {
                         { icon: Network, label: "Firewall blocks unauthorized access" },
                         { icon: Database, label: "Your data encrypted at rest & in transit" },
                         { icon: Eye, label: "Threats detected before they reach you" },
+                        { icon: ShieldAlert, label: "Prompt injection attacks blocked" },
                         { icon: ScanLine, label: "Vulnerabilities patched automatically" },
                         { icon: Fingerprint, label: "Nobody gets in without authorization" },
                       ].map((item) => (
@@ -911,8 +921,9 @@ export default function Home() {
                       { self: "You find out after the hack", pocket: "Alerts before damage" },
                       { self: "Hours of manual setup", pocket: "Live in minutes" },
                       { self: "Keys in plaintext files", pocket: "Secrets vault, encrypted" },
-                    ].map((row, i) => (
-                      <div key={row.self} className={`grid grid-cols-[1fr_1fr] ${i < 4 ? "border-b border-white/[0.04]" : ""}`}>
+                      { self: "No prompt injection defense", pocket: "Built-in injection filtering" },
+                    ].map((row, i, arr) => (
+                      <div key={row.self} className={`grid grid-cols-[1fr_1fr] ${i < arr.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
                         <div className="flex items-center gap-2.5 px-5 py-3.5 text-[13px] text-muted-foreground/50">
                           <X className="h-3.5 w-3.5 shrink-0 text-[#A855F7]/40" />
                           {row.self}
@@ -955,7 +966,8 @@ export default function Home() {
               <SecurityCard icon={Lock} title="Verified connections only" description="Both sides of every connection prove their identity with certificates. Impersonation and interception are impossible." delay={0} />
               <SecurityCard icon={Network} title="Locked down by default" description="All external access is blocked unless explicitly allowed. Only authorized traffic reaches your bot." delay={0.1} />
               <SecurityCard icon={Database} title="Nothing stored in plaintext" description="Your database, configs, and API keys are encrypted at every layer. No gaps, no exceptions." delay={0.15} />
-              <SecurityCard icon={KeyRound} title="Protected at rest & in motion" description="AES-256 for stored data, TLS 1.3 for data in transit. Your information is safe whether it's sitting still or moving." delay={0.2} />
+              <SecurityCard icon={ShieldAlert} title="Prompt injection defense" description="Malicious prompts designed to hijack your bot are detected and blocked before they reach the model. Your bot only follows your rules." delay={0.2} />
+              <SecurityCard icon={KeyRound} title="Protected at rest & in motion" description="AES-256 for stored data, TLS 1.3 for data in transit. Your information is safe whether it's sitting still or moving." delay={0.25} />
             </div>
 
           </div>
@@ -1021,9 +1033,9 @@ export default function Home() {
 
             <div className="grid gap-0 md:grid-cols-2 md:gap-x-16">
               {[
-                { q: "What exactly is PocketMolt?", a: "PocketMolt is an app that deploys and runs your MoltBot for you. You sign up, paste your API keys, and your bot is live — fully hosted, secured, and monitored. No servers, no terminal, no maintenance." },
-                { q: "Do I need any technical knowledge?", a: "None. If you can copy and paste an API key, you can use PocketMolt. The entire setup happens through a simple dashboard." },
-                { q: "Is my data safe?", a: "Yes. Everything is encrypted — your keys, your data, your traffic. We use the same security standards as banks and enterprise software. And a dedicated cybersecurity expert monitors every deployment." },
+                { q: "What exactly is PocketMolt?", a: "PocketMolt is an app that deploys and runs your MoltBot for you. You sign up, configure your bot, and you're live — fully hosted, secured, and monitored. No servers, no terminal, no maintenance. API keys are optional — you can use yours or ours." },
+                { q: "Do I need any technical knowledge?", a: "None. The entire setup happens through a simple dashboard. No terminal, no config files, no coding required." },
+                { q: "Is my data safe?", a: "Yes. Everything is encrypted — your keys, your data, your traffic. We also have built-in prompt injection filtering to stop malicious inputs from hijacking your bot. We use the same security standards as banks and enterprise software, and a dedicated cybersecurity expert monitors every deployment." },
                 { q: "What happens after I join the waitlist?", a: "When your spot opens, you get instant access to deploy your MoltBot. The initial launch is limited to 1,000 users so we can guarantee quality for everyone." },
                 { q: "I already self-host MoltBot. Can I switch?", a: "Yes. We built a migration path that moves your configs and data over securely. You keep everything, just without the maintenance burden." },
                 { q: "What will it cost?", a: "Pricing will be announced at launch. Everyone on the waitlist gets early-bird pricing locked in." },
