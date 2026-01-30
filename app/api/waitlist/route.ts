@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { createHash } from "crypto"
 
 /* ─── Email validation ─── */
@@ -45,7 +44,10 @@ function hashIp(ip: string): string {
 async function subscribeToKlaviyo(email: string) {
   const apiKey = process.env.KLAVIYO_API_KEY
   const listId = process.env.KLAVIYO_LIST_ID
-  if (!apiKey || !listId) return
+  if (!apiKey || !listId) {
+    console.error("[waitlist] Missing KLAVIYO_API_KEY or KLAVIYO_LIST_ID")
+    return false
+  }
 
   try {
     // 1. Create or update the profile
@@ -69,7 +71,10 @@ async function subscribeToKlaviyo(email: string) {
 
     const profileData = await profileRes.json()
     const profileId = profileData?.data?.id
-    if (!profileId) return
+    if (!profileId) {
+      console.error("[waitlist] Klaviyo: no profile ID returned", profileData)
+      return false
+    }
 
     // 2. Subscribe profile to the list
     await fetch(`https://a.klaviyo.com/api/lists/${listId}/relationships/profiles/`, {
@@ -83,8 +88,11 @@ async function subscribeToKlaviyo(email: string) {
         data: [{ type: "profile", id: profileId }],
       }),
     })
+
+    return true
   } catch (err) {
     console.error("[waitlist] Klaviyo error:", err)
+    return false
   }
 }
 
@@ -103,7 +111,6 @@ export async function POST(request: Request) {
 
     // Honeypot check — bots fill hidden fields
     if (website) {
-      // Silently return success to fool the bot
       return NextResponse.json({ message: "You're on the list!" })
     }
 
@@ -118,32 +125,16 @@ export async function POST(request: Request) {
       )
     }
 
-    // Store in Supabase (upsert to handle duplicates gracefully)
-    const supabase = createAdminClient()
+    // Subscribe to Klaviyo
     const normalizedEmail = email.toLowerCase().trim()
+    const success = await subscribeToKlaviyo(normalizedEmail)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: dbError } = await (supabase as any)
-      .from("waitlist")
-      .upsert(
-        {
-          email: normalizedEmail,
-          ip_hash: hashIp(ip),
-          consent_given: true,
-        },
-        { onConflict: "email", ignoreDuplicates: true }
-      )
-
-    if (dbError) {
-      console.error("[waitlist] DB error:", dbError.message)
+    if (!success) {
       return NextResponse.json(
         { error: "Something went wrong. Please try again." },
         { status: 500 }
       )
     }
-
-    // Subscribe to Klaviyo (fire and forget — don't block the response)
-    subscribeToKlaviyo(normalizedEmail)
 
     return NextResponse.json({ message: "You're on the list!" })
   } catch {
