@@ -278,7 +278,7 @@ function TeamCard({
   delay?: number
 }) {
   return (
-    <Reveal delay={delay} className="h-full min-w-[260px] snap-center">
+    <Reveal delay={delay} className="h-full min-w-[290px] snap-center">
       <div className="group relative flex h-full flex-col overflow-hidden rounded-[16px] border border-white/[0.08] bg-gradient-to-b from-white/[0.07] to-white/[0.03] backdrop-blur-sm transition-all duration-300 hover:-translate-y-[2px] hover:border-white/[0.12] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.1),0_1px_2px_rgba(0,0,0,0.4),0_4px_8px_rgba(0,0,0,0.2)]">
         {/* Portrait */}
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
@@ -437,28 +437,28 @@ function PhoneWaitlistUI() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-between px-4 pt-4 pb-1.5">
+    <div className="flex flex-1 flex-col items-center justify-between px-5 pt-5 pb-2">
       {/* App icon + branding */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
         {/* Premium app icon with layered glow */}
         <div className="relative">
-          <div className="absolute -inset-2 rounded-2xl bg-[#A855F7]/10 blur-lg" />
-          <div className="relative flex h-12 w-12 items-center justify-center rounded-[14px] bg-gradient-to-br from-[#A855F7] via-[#9333EA] to-[#7C3AED] [box-shadow:0_4px_16px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
-            <Terminal className="h-5 w-5 text-white" />
+          <div className="absolute -inset-3 rounded-3xl bg-[#A855F7]/10 blur-xl" />
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-[16px] bg-gradient-to-br from-[#A855F7] via-[#9333EA] to-[#7C3AED] [box-shadow:0_4px_16px_rgba(168,85,247,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]">
+            <Terminal className="h-6 w-6 text-white" />
           </div>
         </div>
-        <p className="font-display text-[15px] font-bold tracking-tight text-white">PocketMolt</p>
-        <p className="max-w-[160px] text-center text-[11px] leading-snug text-white/30">
+        <p className="font-display text-[17px] font-bold tracking-tight text-white">PocketMolt</p>
+        <p className="max-w-[180px] text-center text-[12px] leading-snug text-white/30">
           Deploy your MoltBot in minutes
         </p>
       </div>
 
       {/* Email input + button */}
-      <div className="w-full space-y-2 pb-3">
+      <div className="w-full space-y-2.5 pb-3">
         {status === "success" ? (
-          <div className="flex flex-col items-center gap-2 py-3">
-            <CheckCircle className="h-5 w-5 text-[#A855F7]" />
-            <p className="text-[13px] font-semibold text-white/90">You&apos;re on the list!</p>
+          <div className="flex flex-col items-center gap-3 py-4">
+            <CheckCircle className="h-6 w-6 text-[#A855F7]" />
+            <p className="text-[14px] font-semibold text-white/90">You&apos;re on the list!</p>
           </div>
         ) : (
           <>
@@ -475,7 +475,7 @@ function PhoneWaitlistUI() {
                   e.target.scrollIntoView({ behavior: "smooth", block: "center" })
                 }, 300)
               }}
-              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none transition-all duration-200 focus:border-[#A855F7]/30 focus:bg-white/[0.06] focus:[box-shadow:0_0_0_3px_rgba(168,85,247,0.08)]"
             />
             {/* Honeypot — hidden from humans, bots fill it */}
             <input
@@ -491,7 +491,7 @@ function PhoneWaitlistUI() {
             <button
               onClick={handleSubmit}
               disabled={status === "loading" || !consent}
-              className="w-full rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-2.5 text-[13px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-40 [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
+              className="w-full rounded-xl bg-gradient-to-b from-[#A855F7] to-[#8B33E0] py-3 text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:opacity-40 [box-shadow:0_0_0_1px_rgba(168,85,247,0.5),0_4px_16px_rgba(168,85,247,0.3),0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.15)]"
             >
               {status === "loading" ? "Joining..." : "Join Waitlist"}
             </button>
@@ -503,7 +503,7 @@ function PhoneWaitlistUI() {
                 onChange={(e) => setConsent(e.target.checked)}
                 className="mt-0.5 h-3 w-3 shrink-0 rounded border-white/20 bg-white/5 accent-[#A855F7]"
               />
-              <span className="text-[9px] leading-snug text-white/25">
+              <span className="text-[10px] leading-snug text-white/25">
                 I agree to the{" "}
                 <a href="/terms" target="_blank" className="underline hover:text-white/40">Terms</a>{" "}
                 and to receive updates.
@@ -514,7 +514,7 @@ function PhoneWaitlistUI() {
         {(status === "error" || status === "rate-limited") && (
           <p className="text-center text-[10px] text-red-400">{errorMsg}</p>
         )}
-        <p className="text-center text-[9px] tracking-wide text-white/15">
+        <p className="text-center text-[10px] tracking-wide text-white/15">
           1,000 spots &middot; first come, first serve
         </p>
       </div>
@@ -674,7 +674,7 @@ export default function Home() {
                     animate={{ y: heroFocusPhone ? 0 : [0, -6, 0] }}
                     transition={heroFocusPhone ? { duration: 0.4 } : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <IPhoneMockup className="w-[260px] md:w-[300px]" />
+                    <IPhoneMockup className="w-[290px] md:w-[300px]" />
                   </motion.div>
 
                   {/* Back button — sits right below the phone */}
